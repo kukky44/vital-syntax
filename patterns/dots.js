@@ -4,83 +4,83 @@ class Dots extends PatternItem {
     this.margin = this.gap / 2 * 1.25;
   }
 
-  draw() {
-    super.draw();
-    noStroke();
+  draw(g = window) {
+    super.draw(g);
+    g.noStroke();
 
     if(this.num === 0) {
-      circle(0, 0, this.size);
+      g.circle(0, 0, this.size);
     }
 
     if(this.num === 1) {
-      circle(-this.gap/2, 0, this.size);
-      circle(this.gap/2, 0, this.size);
+      g.circle(-this.gap/2, 0, this.size);
+      g.circle(this.gap/2, 0, this.size);
     }
 
     if(this.num === 2) {
-      circle(0, -this.gap/2, this.size);
-      circle(0, this.gap/2, this.size);
+      g.circle(0, -this.gap/2, this.size);
+      g.circle(0, this.gap/2, this.size);
     }
 
     if(this.num === 3) {
       let verts = equilateralTriangleVertices(0, 0, this.gap);
       for (let v of verts) {
-        circle(v[0], v[1], this.size);
+        g.circle(v[0], v[1], this.size);
       }
     }
 
     if(this.num === 4) {
       let verts = equilateralTriangleVertices(0, 0, this.gap);
-      translate(0, -this.gap / 5);
-      rotate(QUARTER_PI);
+      g.translate(0, -this.gap / 5);
+      g.rotate(QUARTER_PI);
       for (let v of verts) {
-        circle(v[0], v[1], this.size);
+        g.circle(v[0], v[1], this.size);
       }
     }
 
     if(this.num === 5) {
-      circle(-this.gap/2, -this.gap/2, this.size);
-      circle(this.gap/2, -this.gap/2, this.size);
-      circle(-this.gap/2, this.gap/2, this.size);
-      circle(this.gap/2, this.gap/2, this.size);
+      g.circle(-this.gap/2, -this.gap/2, this.size);
+      g.circle(this.gap/2, -this.gap/2, this.size);
+      g.circle(-this.gap/2, this.gap/2, this.size);
+      g.circle(this.gap/2, this.gap/2, this.size);
     }
 
     if(this.num === 6) {
-      circle(-this.margin, 0, this.size);
-      circle(this.margin, 0, this.size);
-      circle(0, -this.margin, this.size);
-      circle(0, this.margin, this.size);
+      g.circle(-this.margin, 0, this.size);
+      g.circle(this.margin, 0, this.size);
+      g.circle(0, -this.margin, this.size);
+      g.circle(0, this.margin, this.size);
     }
 
     if(this.num === 7) {
-      circle(-this.gap/2, -this.gap/2, this.size);
-      circle(this.gap/2, -this.gap/2, this.size);
-      circle(-this.gap/2, this.gap/2, this.size);
-      circle(this.gap/2, this.gap/2, this.size);
-      circle(0, 0, this.size);
+      g.circle(-this.gap/2, -this.gap/2, this.size);
+      g.circle(this.gap/2, -this.gap/2, this.size);
+      g.circle(-this.gap/2, this.gap/2, this.size);
+      g.circle(this.gap/2, this.gap/2, this.size);
+      g.circle(0, 0, this.size);
     }
 
     if(this.num === 8) {
-      circle(-this.margin, 0, this.size);
-      circle(this.margin, 0, this.size);
-      circle(0, -this.margin, this.size);
-      circle(0, this.margin, this.size);
-      circle(0, 0, this.size);
+      g.circle(-this.margin, 0, this.size);
+      g.circle(this.margin, 0, this.size);
+      g.circle(0, -this.margin, this.size);
+      g.circle(0, this.margin, this.size);
+      g.circle(0, 0, this.size);
     }
 
     if(this.num === 9) {
-      circle(-this.margin, -this.margin, this.size);
-      circle(-this.margin, this.margin, this.size);
-      circle(this.margin, -this.margin, this.size);
-      circle(this.margin, this.margin, this.size);
-      circle(-this.margin, 0, this.size);
-      circle(this.margin, 0, this.size);
-      circle(0, -this.margin, this.size);
-      circle(0, this.margin, this.size);
-      circle(0, 0, this.size);
+      g.circle(-this.margin, -this.margin, this.size);
+      g.circle(-this.margin, this.margin, this.size);
+      g.circle(this.margin, -this.margin, this.size);
+      g.circle(this.margin, this.margin, this.size);
+      g.circle(-this.margin, 0, this.size);
+      g.circle(this.margin, 0, this.size);
+      g.circle(0, -this.margin, this.size);
+      g.circle(0, this.margin, this.size);
+      g.circle(0, 0, this.size);
     }
 
-    pop();
+    g.pop();
   }
 }
 

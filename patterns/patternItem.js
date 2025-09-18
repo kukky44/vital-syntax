@@ -39,14 +39,14 @@ class PatternItem {
     this.y += v;
   }
 
-  draw() {
-    push();
-    translate(this.x, this.y);
-    scale(this.scl);
-    blendMode(ADD);
+  draw(g = window) {
+    g.push();
+    g.translate(this.x, this.y);
+    g.scale(this.scl);
+    g.blendMode(ADD);
 
-    strokeWeight(3);
-    stroke(this.col, 100, 100, this.alp);
-    fill(this.col, 100, 100, this.alp);
+    g.strokeWeight(3);
+    g.stroke(this.col, 100, 100, this.alp);
+    g.fill(this.col, 100, 100, this.alp);
   }
 }

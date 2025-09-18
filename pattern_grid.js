@@ -65,7 +65,6 @@ function setup() {
   noFill();
   strokeWeight(1.2);
 
-  colorMode(HSB);
 
   rectSize = height / 3 * 2;
   rectX = width / 2 - rectSize / 2;
@@ -90,35 +89,39 @@ function setup() {
   RcurGridX = patternStartX;
   RcurGridY = patternStartY;
 
-  pg = createGraphics(0, 0);
-
   leftSensors = new SerialManager('/dev/tty.usbmodemFX2348N1');
   rightSensors = new SerialManager('/dev/tty.usbmodem14301');
 
-  // for(let i = 0; i < gridItemRow; i++) {
-  //   for(let j = 0; j < gridItemRow; j++) {
-  //     let num = Math.round(random(9));
-  //     let col = Math.round(random(40, 120));
+  colorMode(HSB);
 
-  //     L_pattern.push(new Lines(width, 0, LcurGridX, LcurGridY, num, col));
-  //     LcurGridY += gridSize;
-  //   }
-  //   LcurGridY = patternStartY;
-  //   LcurGridX += gridSize;
-  // }
+  //for saving pattern
+  pg = createGraphics(rectSize + 3, rectSize + 3);
+  pg.colorMode(HSB);
 
-  // for(let i = 0; i < gridItemRow; i++) {
-  //   for(let j = 0; j < gridItemRow; j++) {
-  //     let num = Math.round(random(9));
-  //     let col = Math.round(random(40, 120));
+  for(let i = 0; i < gridItemRow; i++) {
+    for(let j = 0; j < gridItemRow; j++) {
+      let num = Math.round(random(9));
+      let col = Math.round(random(40, 120));
 
-  //     // num = 7;
-  //     R_pattern.push(new Waves(width, 0, RcurGridX, RcurGridY, num, col));
-  //     RcurGridY += gridSize;
-  //   }
-  //   RcurGridY = patternStartY;
-  //   RcurGridX += gridSize;
-  // }
+      L_pattern.push(new Circles(width, 0, LcurGridX, LcurGridY, num, col));
+      LcurGridY += gridSize;
+    }
+    LcurGridY = patternStartY;
+    LcurGridX += gridSize;
+  }
+
+  for(let i = 0; i < gridItemRow; i++) {
+    for(let j = 0; j < gridItemRow; j++) {
+      let num = Math.round(random(9));
+      let col = Math.round(random(40, 120));
+
+      // num = 7;
+      R_pattern.push(new Dots(width, 0, RcurGridX, RcurGridY, num, col));
+      RcurGridY += gridSize;
+    }
+    RcurGridY = patternStartY;
+    RcurGridX += gridSize;
+  }
 }
 
 function draw() {
@@ -203,7 +206,7 @@ function draw() {
 
   drawCenterGrid(rectX, rectY);
 
-  // if(frameCount > 100) noLoop();
+  if(frameCount > 100) noLoop();
 }
 
 function showPressingMessage() {
@@ -254,13 +257,13 @@ function addPatternItem(side) {
   }
 }
 
-function drawCenterGrid(x, y) {
+function drawCenterGrid(x, y, g = window) {
   for(let i = 0; i < gridItemRow; i++) {
     for(let j = 0; j < gridItemRow; j++) {
-      strokeWeight(3);
-      stroke(255);
-      noFill();
-      rect(x + i*gridSize, y + j*gridSize, gridSize);
+      g.strokeWeight(3);
+      g.stroke(255);
+      g.noFill();
+      g.rect(x + i*gridSize, y + j*gridSize, gridSize);
     }
   }
 }
@@ -317,6 +320,24 @@ function resetGrid() {
   RcurGridY = patternStartY;
 }
 
+function savePattern() {
+  //draw on the offscreen canvas to save
+  pg.clear();
+  pg.background(10);
+  pg.push();
+  //move the half of the stroke width to include the whole grid stroke
+  pg.translate(1.5, 1.5);
+  drawCenterGrid(0, 0, pg);
+  pg.pop();
+  for(let pat of L_pattern) pat.draw(pg);
+  for(let pat of R_pattern) pat.draw(pg);
+
+  //save using the current timestamp
+  let timestamp = Date.now();
+  save(pg, `${timestamp.toString()}.png`);
+
+}
+
 function getRightmostDigit(number) {
   return Math.abs(number % 10);
 }
@@ -340,8 +361,7 @@ function keyPressed(){
   }
 
   if(key == "d"){
-    let timestamp = Date.now();
-    saveCanvas(timestamp.toString(), "png");
+    savePattern();
   }
 
   if(key == "g"){

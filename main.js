@@ -14,19 +14,6 @@ function showCanvas() {
 
 openCanvasBtn.addEventListener('click', showCanvas);
 
-//Splide
-document.addEventListener('DOMContentLoaded', function () {
-  new Splide('.splide', {
-    autoplay: true,
-    interval: 5000,
-    type: 'loop',
-    pauseOnHover: false,
-    pauseOnFocus: false,
-    // width : '100vw',
-		// height: '100vh',
-  }).mount();
-});
-
 // hideCanvas();
 
 //loading animation
@@ -41,4 +28,24 @@ function showLoader(side) {
 function hideLoader(side) {
   if(side == 'left') leftLoader.style.display = "none";
   else rightLoader.style.display = "none";
+}
+
+//Splide
+let splide;
+document.addEventListener('DOMContentLoaded', function () {
+  splide = new Splide('.splide', {
+    autoplay: true,
+    interval: 5000,
+    type: 'loop',
+    pauseOnHover: false,
+    pauseOnFocus: false,
+    // width : '100vw',
+		// height: '100vh',
+  }).mount();
+});
+
+function addPatternSlide(timestamp) {
+  const slide = document.createElement( 'li' );
+  slide.classList.add( 'splide__slide' );
+  add( slide );
 }
