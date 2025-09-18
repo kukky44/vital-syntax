@@ -28,3 +28,17 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // hideCanvas();
+
+//loading animation
+const leftLoader = document.getElementById('leftLoader');
+const rightLoader = document.getElementById('rightLoader');
+
+function showLoader(side) {
+  if(side == 'left') leftLoader.style.display = "block";
+  else rightLoader.style.display = "block";
+}
+
+function hideLoader(side) {
+  if(side == 'left') leftLoader.style.display = "none";
+  else rightLoader.style.display = "none";
+}

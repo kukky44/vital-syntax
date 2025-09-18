@@ -9,28 +9,31 @@ class SerialManager {
     this.serial.on('close', this.portClose);
     this.serial.openPort(port);
 
+    // this.serial.list();
+
     this.irValue = 40000;
-    this.bpmValue = "waiting...";
+    this.bpmValue = 0;
     this.tempValue = 20;
     this.isActive = false;
   }
 
-  printList(portList) {
+  printList = (portList) => {
     for (let i = 0; i < portList.length; i++) {
       print(i + " " + portList[i]);
     }
   }
 
-  serverConnected() {
+  serverConnected = () => {
     print("Connected to Server");
   }
 
-  portOpen() {
+  portOpen = () => {
     print("Port is open");
   }
 
-  gotData() {
-    let currentString = serial.readLine().trim();
+  gotData = () => {
+    // console.log("data: ");
+    let currentString = this.serial.readLine().trim();
     if (currentString.length > 0) {
       let parts = currentString.split(",");
       if (parts.length === 3) {
@@ -41,12 +44,12 @@ class SerialManager {
     }
   }
 
-  gotError(theerror) {
+  gotError = (theerror) => {
     print('error:');
     print(theerror);
   }
 
-  portClose() {
+  portClose = () => {
     print("The port was closed");
   }
 }

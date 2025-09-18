@@ -3,30 +3,28 @@ let myCanvas;
 let minIr = 40000;
 let defalutRate = 40;
 let maxRate = 140;
-let rate = defalutRate;
+let rRate = defalutRate;
 let lRate = defalutRate;
 let prevRate = defalutRate;
 
 //for arduino sensors
-let serial;
-let irValue = 40000;
-let bpmValue = "waiting...";
-let tempValue = 20;
 let leftSensors;
-
-//is hand on the sensor
-let isActive = true;
+let rightSensors;
 
 //gradual change for the temperature
-let cTemp = tempValue;
-let cValue = 140;
+let leftCTemp = 20;
+let rightCTemp = 20;
+let leftCValue = 140;
+let rightCValue = 140;
 
 //pulse animation
-let lastBeat = 0;
+let indicatorState = {
+  left: {lastBeat: 0, pulse: 0},
+  right: {lastBeat: 0, pulse: 0}
+}
+let indiLOffsetX;
+let indiROffsetX;
 let interval = 60;    // milliseconds per beat
-let pulse = 0;   // animation value (0 → 1)
-let maxPulseNum = 180;
-let isRightReached = false;
 
 //sarturation, brightness
 let sat = 100;
@@ -74,6 +72,10 @@ function setup() {
   rectY = height / 2 - rectSize / 2;
   gridSize = rectSize / gridItemRow;
 
+  //set indicator positions
+  indiLOffsetX = height / 7;
+  indiROffsetX = width - height / 7;
+
   patternStartX = gridSize / 2;
   patternStartY = gridSize / 2;
 
@@ -88,19 +90,10 @@ function setup() {
   RcurGridX = patternStartX;
   RcurGridY = patternStartY;
 
-  console.log("startX: " + patternStartX);
-
   pg = createGraphics(0, 0);
 
-  serial = new p5.SerialPort();
-  serial.on('connected', serverConnected);
-  serial.on('open', portOpen);
-  serial.on('data', gotData);
-  serial.on('error', gotError);
-  serial.on('close', portClose);
-  serial.openPort('/dev/tty.usbmodem14101');
-
-  leftSensors = new SerialManager('/dev/tty/...');
+  leftSensors = new SerialManager('/dev/tty.usbmodemFX2348N1');
+  rightSensors = new SerialManager('/dev/tty.usbmodem14301');
 
   // for(let i = 0; i < gridItemRow; i++) {
   //   for(let j = 0; j < gridItemRow; j++) {
@@ -144,64 +137,94 @@ function draw() {
   }
   pop();
 
-  logg('BPM: ' + bpmValue + ', Temp: ' + tempValue);
+  logg('lBPM: ' + leftSensors.bpmValue + ', lTemp: ' + leftSensors.tempValue);
+  logg('rBPM: ' + rightSensors.bpmValue + ', rTemp: ' + rightSensors.tempValue);
+  // logg('BPM: ' + bpmValue + ', Temp: ' + tempValue);
 
-  //color
-  cTemp = lerp(cTemp, tempValue, 0.1);
-  cValue = Math.round(map(cTemp, 24, 40, 140, 360));
-  if(cValue < 0) cValue = 360 + cValue;
+  //left color
+  leftCTemp = lerp(leftCTemp, leftSensors.tempValue, 0.1);
+  leftCValue = Math.round(map(leftCTemp, 24, 40, 140, 360));
+  if(leftCValue < 0) leftCValue = 360 + leftCValue;
 
-  //detect the hand and draw if detected
-  if(irValue > minIr){
-    if(bpmValue > defalutRate) {
-      rate = bpmValue;
-      isActive = true;
+  //right color
+  rightCTemp = lerp(rightCTemp, rightSensors.tempValue, 0.1);
+  rightCValue = Math.round(map(rightCTemp, 24, 40, 140, 360));
+  if(rightCValue < 0) rightCValue = 360 + rightCValue;
+
+
+  //detect the hand and add pattern
+  //left
+  if(leftSensors.irValue > minIr){
+    if(leftSensors.bpmValue > defalutRate) {
+      lRate = leftSensors.bpmValue;
+      leftSensors.isActive = true;
+      hideLoader('left');
 
       if(frameCount % 15 === 0) {
         if(L_pattern.length < maxPatternItem) {
           addPatternItem('left');
         }
+      }
+    } else {
+      showPressingMessage();
+      showLoader('left');
+    }
+  } else {
+    lRate = defalutRate;
+    leftSensors.isActive = false;
+    hideLoader('left');
+  }
+  //right
+  if(rightSensors.irValue > minIr){
+    if(rightSensors.bpmValue > defalutRate) {
+      rRate = rightSensors.bpmValue;
+      rightSensors.isActive = true;
+      hideLoader('right');
 
+      if(frameCount % 15 === 0) {
         if(R_pattern.length < maxPatternItem) {
-          if(isChaaaaaaaaaaged) addPatternItem('right');
+          addPatternItem('right');
         }
       }
     } else {
-      textAlign(CENTER);
-      fill(255, 0, 100);
-      noStroke();
-      textSize(20);
-      text("Please press your finger firmly and keep it there for at least 10 seconds...", width / 2, 120);
+      showPressingMessage();
+      showLoader('right');
     }
   } else {
-    rate = defalutRate;
-    isActive = false;
+    rRate = defalutRate;
+    rightSensors.isActive = false;
+    hideLoader('right');
   }
 
-  if(isRightReached) {
-    stroke(0, 0, 100);
-    strokeWeight(3);
-    noFill();
-    // rect(rectX, rectY, rectSize);
-  }
+  //left indicator
+  drawIndicator(leftSensors, leftCValue, indiLOffsetX, rectY + 30, indicatorState.left, lRate);
+  //right indicator
+  drawIndicator(rightSensors, rightCValue, indiROffsetX, rectY + 30, indicatorState.right, rRate);
 
-  drawIndicator();
   drawCenterGrid(rectX, rectY);
 
   // if(frameCount > 100) noLoop();
 }
 
+function showPressingMessage() {
+  textAlign(CENTER);
+  fill(255, 0, 100);
+  noStroke();
+  textSize(20);
+  text("Please press your finger firmly and keep it there for at least 10 seconds!", width / 2, height / 10);
+}
+
 //adds an item for the pattern based on the current rate and temp
 function addPatternItem(side) {
-  let num = getRightmostDigit(rate);
 
   if(side === 'left') {
-    if(rate < 70) {
-      L_pattern.push(new Dots(leftAnimStartX, animStartY, LcurGridX, LcurGridY, num, cValue, rate));
-    } else if(rate < 80) {
-      L_pattern.push(new Lines(leftAnimStartX, animStartY, LcurGridX, LcurGridY, num, cValue, rate));
+    let num = getRightmostDigit(lRate);
+    if(lRate < 70) {
+      L_pattern.push(new Dots(leftAnimStartX, animStartY, LcurGridX, LcurGridY, num, leftCValue, lRate));
+    } else if(lRate < 80) {
+      L_pattern.push(new Lines(leftAnimStartX, animStartY, LcurGridX, LcurGridY, num, leftCValue, lRate));
     } else {
-      L_pattern.push(new Waves(leftAnimStartX, animStartY, LcurGridX, LcurGridY, num, cValue, rate));
+      L_pattern.push(new Waves(leftAnimStartX, animStartY, LcurGridX, LcurGridY, num, leftCValue, lRate));
     }
 
     //shift the grid position
@@ -212,12 +235,13 @@ function addPatternItem(side) {
       LcurGridX += gridSize;
     }
   } else {
-    if(rate < 70) {
-      R_pattern.push(new Squares(rightAnimStartX, animStartY, RcurGridX, RcurGridY, num, cValue, rate));
-    } else if(rate < 80) {
-      R_pattern.push(new Circles(rightAnimStartX, animStartY, RcurGridX, RcurGridY, num, cValue, rate));
+    let num = getRightmostDigit(rRate);
+    if(rRate < 70) {
+      R_pattern.push(new Squares(rightAnimStartX, animStartY, RcurGridX, RcurGridY, num, rightCValue, rRate));
+    } else if(rRate < 80) {
+      R_pattern.push(new Circles(rightAnimStartX, animStartY, RcurGridX, RcurGridY, num, rightCValue, rRate));
     } else{
-      R_pattern.push(new Triangles(rightAnimStartX, animStartY, RcurGridX, RcurGridY, num, cValue, rate));
+      R_pattern.push(new Triangles(rightAnimStartX, animStartY, RcurGridX, RcurGridY, num, rightCValue, rRate));
     }
 
     //shift the grid position
@@ -241,18 +265,7 @@ function drawCenterGrid(x, y) {
   }
 }
 
-function drawIndicator() {
-  //temp circle
-  let offsetX;
-  let offsetY;
-  if(isChaaaaaaaaaaged) {
-    offsetX = width - height / 7;
-    offsetY = height / 7;
-  }else {
-    offsetX = height / 7;
-    offsetY = height / 7;
-  }
-
+function drawIndicator(sensor, cValue, offsetX, offsetY, state, rate) {
   //temp circle
   noStroke();
   fill(cValue, sat, brt);
@@ -260,14 +273,14 @@ function drawIndicator() {
 
   interval = (60 / rate) * 1000; // ms per beat
   // check if it's time for a new beat
-  if (millis() - lastBeat > interval) {
-    lastBeat = millis();
-    pulse = 1; // reset pulse to max when beat hits
+  if (millis() - state.lastBeat > interval) {
+    state.lastBeat = millis();
+    state.pulse = 1; // reset pulse to max when beat hits
   }
 
   // decay the pulse smoothly
-  pulse *= 0.95;
-  let scaleFactor = map(pulse, 0, 1, 1.8, 2.8);
+  state.pulse *= 0.95;
+  let scaleFactor = map(state.pulse, 0, 1, 1.8, 2.8);
 
   fill(0);
   stroke(360, 0, 100);
@@ -276,7 +289,7 @@ function drawIndicator() {
   push();
   drawingContext.shadowBlur = 30;
   drawingContext.shadowColor = color(255);
-  if(isActive) {
+  if(sensor.isActive) {
     beginShape();
     for (let t = 0; t < TWO_PI; t += 0.01) {
       let x = 16 * pow(sin(t), 3);
@@ -308,42 +321,6 @@ function getRightmostDigit(number) {
   return Math.abs(number % 10);
 }
 
-// --- callback functions ---
-function printList(portList) {
-  for (let i = 0; i < portList.length; i++) {
-    print(i + " " + portList[i]);
-  }
-}
-
-function serverConnected() {
-  print("Connected to Server");
-}
-
-function portOpen() {
-  print("Port is open");
-}
-
-function gotData() {
-  let currentString = serial.readLine().trim();
-  if (currentString.length > 0) {
-    let parts = currentString.split(",");
-    if (parts.length === 3) {
-      irValue = parseInt(parts[0].trim().replace(/[^0-9.]/g, ""));
-      bpmValue = parseInt(parts[1].trim().replace(/[^0-9.]/g, ""));
-      tempValue = parseFloat(parts[2].trim().replace(/[^0-9.]/g, ""));
-    }
-  }
-}
-
-function gotError(theerror) {
-  print('error:');
-  print(theerror);
-}
-
-function portClose() {
-  print("The port was closed");
-}
-
 function logg(val) {
   if(frameCount % 100 === 0) {
     console.log(val);
@@ -357,7 +334,6 @@ function keyPressed(){
   }
   if(key == "n") {
     console.log("------- RESET ------");
-    maxPulseNum *= 2;
 
     // resetGrid();
     isChaaaaaaaaaaged = true;

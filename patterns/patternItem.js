@@ -18,6 +18,8 @@ class PatternItem {
   update() {
     if(abs(this.x - this.targetX) < 0.1 && abs(this.y - this.targetY) < 0.1) {
       this.reached = true;
+      this.x = this.targetX;
+      this.y = this.targetY;
       return;
     }
 
@@ -25,7 +27,7 @@ class PatternItem {
     // this.y = lerp(this.y, this.targetY, ANIM_SPEED);
 
     let v = 0;
-    let stiffness = 0.1;
+    let stiffness = 0.08;
     let damping = 0;
 
     let xforce = (this.targetX - this.x) * stiffness;
