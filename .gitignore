@@ -1,1 +1,9 @@
 .DS_Store
+
+# Dependency directories
+/node_modules
+/vendor
+
+# IDE-specific files
+.vscode/
+.idea/

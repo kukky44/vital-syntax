@@ -31,11 +31,11 @@ class Circles extends PatternItem {
 
     //vertical diamond
     if(this.num === 3) {
-      let scaled = this.size*0.9;
+      let scaled = this.size*0.7;
       let scaledGap = this.gap*0.8;
       g.rotate(QUARTER_PI);
       g.circle(-scaledGap, -scaledGap, scaled);
-      g.circle(scaledGap, scaledGap, scaled);
+      g.circle(scaledGap, scaledGap, this.size*1.5);
     }
 
     //vertical 3

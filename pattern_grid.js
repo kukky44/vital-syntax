@@ -55,18 +55,17 @@ let leftAnimStartX;
 let rightAnimStartX;
 let animStartY;
 const ANIM_SPEED = 0.01;
-
-
-let isChaaaaaaaaaaged = false;
+let isLeftFinished = false;
+let isRightFinished = false;
+let finishedFrame = 0;
+let isFinishing = false;
 
 function setup() {
   myCanvas = createCanvas(windowWidth, windowHeight);
   myCanvas.parent('myCanvas');
   noFill();
-  strokeWeight(1.2);
 
-
-  rectSize = height / 3 * 2;
+  rectSize = height / 2;
   rectX = width / 2 - rectSize / 2;
   rectY = height / 2 - rectSize / 2;
   gridSize = rectSize / gridItemRow;
@@ -98,34 +97,24 @@ function setup() {
   pg = createGraphics(rectSize + 3, rectSize + 3);
   pg.colorMode(HSB);
 
-  for(let i = 0; i < gridItemRow; i++) {
-    for(let j = 0; j < gridItemRow; j++) {
-      let num = Math.round(random(9));
-      let col = Math.round(random(40, 120));
-
-      L_pattern.push(new Circles(width, 0, LcurGridX, LcurGridY, num, col));
-      LcurGridY += gridSize;
-    }
-    LcurGridY = patternStartY;
-    LcurGridX += gridSize;
-  }
-
-  for(let i = 0; i < gridItemRow; i++) {
-    for(let j = 0; j < gridItemRow; j++) {
-      let num = Math.round(random(9));
-      let col = Math.round(random(40, 120));
-
-      // num = 7;
-      R_pattern.push(new Dots(width, 0, RcurGridX, RcurGridY, num, col));
-      RcurGridY += gridSize;
-    }
-    RcurGridY = patternStartY;
-    RcurGridX += gridSize;
-  }
+  // showSample();
 }
 
 function draw() {
   background(3);
+
+  if(isLeftFinished && isRightFinished) {
+    finishedFrame = frameCount;
+    isFinishing = true;
+    isLeftFinished = false;
+    isRightFinished = false;
+  }
+
+  if(isFinishing && frameCount - finishedFrame > 400) {
+    savePattern();
+    resetGrid();
+    hideCanvas();
+  }
 
   push();
   translate(rectX, rectY);
@@ -146,18 +135,19 @@ function draw() {
 
   //left color
   leftCTemp = lerp(leftCTemp, leftSensors.tempValue, 0.1);
-  leftCValue = Math.round(map(leftCTemp, 24, 40, 140, 360));
+  leftCValue = Math.round(map(leftCTemp, 30, 41, 140, 360));
   if(leftCValue < 0) leftCValue = 360 + leftCValue;
 
   //right color
   rightCTemp = lerp(rightCTemp, rightSensors.tempValue, 0.1);
-  rightCValue = Math.round(map(rightCTemp, 24, 40, 140, 360));
+  rightCValue = Math.round(map(rightCTemp, 30, 41, 140, 360));
   if(rightCValue < 0) rightCValue = 360 + rightCValue;
 
 
   //detect the hand and add pattern
   //left
   if(leftSensors.irValue > minIr){
+    showCanvas();
     if(leftSensors.bpmValue > defalutRate) {
       lRate = leftSensors.bpmValue;
       leftSensors.isActive = true;
@@ -179,6 +169,7 @@ function draw() {
   }
   //right
   if(rightSensors.irValue > minIr){
+    showCanvas();
     if(rightSensors.bpmValue > defalutRate) {
       rRate = rightSensors.bpmValue;
       rightSensors.isActive = true;
@@ -206,7 +197,7 @@ function draw() {
 
   drawCenterGrid(rectX, rectY);
 
-  if(frameCount > 100) noLoop();
+  // if(frameCount > 100) noLoop();
 }
 
 function showPressingMessage() {
@@ -230,6 +221,11 @@ function addPatternItem(side) {
       L_pattern.push(new Waves(leftAnimStartX, animStartY, LcurGridX, LcurGridY, num, leftCValue, lRate));
     }
 
+    if(L_pattern.length >= maxPatternItem) {
+      isLeftFinished = true;
+      return;
+    }
+
     //shift the grid position
     if(L_pattern.length % gridItemRow === 0) {
       LcurGridX = patternStartX;
@@ -240,11 +236,16 @@ function addPatternItem(side) {
   } else {
     let num = getRightmostDigit(rRate);
     if(rRate < 70) {
-      R_pattern.push(new Squares(rightAnimStartX, animStartY, RcurGridX, RcurGridY, num, rightCValue, rRate));
-    } else if(rRate < 80) {
       R_pattern.push(new Circles(rightAnimStartX, animStartY, RcurGridX, RcurGridY, num, rightCValue, rRate));
-    } else{
+    } else if(rRate < 80) {
       R_pattern.push(new Triangles(rightAnimStartX, animStartY, RcurGridX, RcurGridY, num, rightCValue, rRate));
+    } else{
+      R_pattern.push(new Squares(rightAnimStartX, animStartY, RcurGridX, RcurGridY, num, rightCValue, rRate));
+    }
+
+    if(R_pattern.length >= maxPatternItem) {
+      isRightFinished = true;
+      return;
     }
 
     //shift the grid position
@@ -318,9 +319,12 @@ function resetGrid() {
   LcurGridY = patternStartY;
   RcurGridX = patternStartX;
   RcurGridY = patternStartY;
+  isLeftFinished = false;
+  isRightFinished = false;
+  isFinishing = false;
 }
 
-function savePattern() {
+function downloadPattern() {
   //draw on the offscreen canvas to save
   pg.clear();
   pg.background(10);
@@ -335,7 +339,41 @@ function savePattern() {
   //save using the current timestamp
   let timestamp = Date.now();
   save(pg, `${timestamp.toString()}.png`);
+  addPatternSlide(timestamp);
+}
 
+function savePattern() {
+  pg.clear();
+  pg.background(10);
+  pg.push();
+  pg.translate(1.5, 1.5);
+  drawCenterGrid(0, 0, pg);
+  pg.pop();
+
+  for (let pat of L_pattern) pat.draw(pg);
+  for (let pat of R_pattern) pat.draw(pg);
+
+  const timestamp = Date.now();
+  const filename = `${timestamp}.png`;
+
+  // get canvas as base64 string
+  const dataUrl = pg.canvas.toDataURL("image/png");
+
+  // send to backend
+  fetch("/save-pattern", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dataUrl, filename })
+  })
+  .then(res => res.json())
+  .then(result => {
+    if (result.success) {
+      addPatternSlide(result.path); // load from backend URL
+      goToLastSlide();
+    } else {
+      console.error("Save failed:", result);
+    }
+  });
 }
 
 function getRightmostDigit(number) {
@@ -353,22 +391,58 @@ function keyPressed(){
   if(keyCode == ENTER){
     noLoop();
   }
-  if(key == "n") {
-    console.log("------- RESET ------");
 
+  if(key == "n") {
     // resetGrid();
-    isChaaaaaaaaaaged = true;
+    let temp = leftSensors;
+    leftSensors = rightSensors;
+    rightSensors = temp;
   }
 
   if(key == "d"){
-    savePattern();
+    downloadPattern();
   }
 
   if(key == "g"){
     hideCanvas();
   }
+
+  if(key == "h") {
+    showCanvas();
+  }
 }
 
 function keyReleased() {
   // rate = 40;
+}
+
+function showSample() {
+  let index = 0;
+  for(let i = 0; i < gridItemRow; i++) {
+    for(let j = 0; j < gridItemRow; j++) {
+      let num = Math.round(random(9));
+      let col = Math.round(random(40, 120));
+
+      L_pattern.push(new Waves(width, 0, LcurGridX, LcurGridY, index, col));
+      LcurGridX += gridSize;
+
+      if(index >= 9) index = 0;
+      else index++;
+    }
+    LcurGridY += gridSize;
+    LcurGridX = patternStartX;
+  }
+
+  // for(let i = 0; i < gridItemRow; i++) {
+  //   for(let j = 0; j < gridItemRow; j++) {
+  //     let num = Math.round(random(9));
+  //     let col = Math.round(random(40, 120));
+
+  //     // num = 7;
+  //     R_pattern.push(new Dots(width, 0, RcurGridX, RcurGridY, num, col));
+  //     RcurGridY += gridSize;
+  //   }
+  //   RcurGridY = patternStartY;
+  //   RcurGridX += gridSize;
+  // }
 }
