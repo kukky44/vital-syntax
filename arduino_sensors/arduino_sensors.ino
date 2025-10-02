@@ -46,6 +46,7 @@ const unsigned long RESET_TIMEOUT = 5000;
 unsigned long nowMillis = 0;
 
 bool fingerPresent = false;
+// int count = 0;
 
 void loop() {
   // read IR ONCE
@@ -56,9 +57,12 @@ void loop() {
     lastPresenceTime = nowMillis;
     fingerPresent = true;
   }
-
+  
   if (fingerPresent && checkForBeat(irValue) == true)
   {
+    // Serial.print(count);
+    // Serial.println("yes!");
+    // count++;
     //We sensed a beat!
     long delta = nowMillis - lastBeat;
     lastBeat = nowMillis;

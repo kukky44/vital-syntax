@@ -26,6 +26,10 @@ let indiLOffsetX;
 let indiROffsetX;
 let interval = 60;    // milliseconds per beat
 
+//progress bar
+let progressBarWidth = 16;
+let progMargin = 80;
+
 //sarturation, brightness
 let sat = 100;
 let brt = 100;
@@ -135,14 +139,13 @@ function draw() {
 
   //left color
   leftCTemp = lerp(leftCTemp, leftSensors.tempValue, 0.1);
-  leftCValue = Math.round(map(leftCTemp, 30, 41, 140, 360));
+  leftCValue = Math.round(map(leftCTemp, 25, 39, 140, 360));
   if(leftCValue < 0) leftCValue = 360 + leftCValue;
 
   //right color
   rightCTemp = lerp(rightCTemp, rightSensors.tempValue, 0.1);
-  rightCValue = Math.round(map(rightCTemp, 30, 41, 140, 360));
+  rightCValue = Math.round(map(rightCTemp, 25, 41, 140, 360));
   if(rightCValue < 0) rightCValue = 360 + rightCValue;
-
 
   //detect the hand and add pattern
   //left
@@ -197,7 +200,30 @@ function draw() {
 
   drawCenterGrid(rectX, rectY);
 
+  //draw progress bar
+  if(leftSensors.isActive) drawProgress(indiLOffsetX + progMargin, L_pattern);
+  if(rightSensors.isActive) drawProgress(indiROffsetX - progMargin, R_pattern);
+
   // if(frameCount > 100) noLoop();
+}
+
+let lProgHeight = 0;
+let rPogHeight = 0;
+
+function drawProgress(x, patternArray) {
+  // Calculate progress (0 to 1)
+  let progress = constrain(patternArray.length / maxPatternItem, 0, 1);
+  let rad = 8;
+
+  // Draw background bar
+  noStroke();
+  fill(255, 0.8); // semi-transparent background
+  rect(x, rectY, progressBarWidth, rectSize, rad);
+
+  // Draw progress fill
+  fill(220, 100, 100); // bright color for progress
+  let filledHeight = rectSize * progress;
+  rect(x, rectY, progressBarWidth, filledHeight, rad);
 }
 
 function showPressingMessage() {
