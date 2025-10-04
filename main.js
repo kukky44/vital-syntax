@@ -11,7 +11,7 @@ function showCanvas() {
   galleryEl.classList.add('hide');
 }
 
-// hideCanvas();
+hideCanvas();
 
 //loading animation
 const leftLoader = document.getElementById('leftLoader');
@@ -25,6 +25,38 @@ function showLoader(side) {
 function hideLoader(side) {
   if(side == 'left') leftLoader.style.display = "none";
   else rightLoader.style.display = "none";
+}
+
+//prompt screen
+const promptLeft = document.getElementById('promptLeft');
+const promptRight = document.getElementById('promptRight');
+
+function showPrompt(side) {
+  if(side == 'left') promptLeft.classList.remove('hide');
+  else promptRight.classList.remove('hide');
+}
+
+function hidePrompt(side) {
+  if(side == 'left') promptLeft.classList.add('hide');
+  else promptRight.classList.add('hide');
+}
+
+//finished animation
+const finishedLeft = document.getElementById('finishedLeft');
+const finishedRight = document.getElementById('finishedRight');
+function showFinishedAnimation(side) {
+  if(side == 'left') {
+    finishedLeft.style.display = 'none';
+    finishedLeft.style.display = 'block';
+  } else {
+    finishedRight.style.display = 'none';
+    finishedRight.style.display = 'block';
+  }
+}
+
+function hideFinishedAnimation() {
+  finishedLeft.style.display = 'none';
+  finishedRight.style.display = 'none';
 }
 
 //Splide

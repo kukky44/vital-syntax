@@ -12,7 +12,7 @@ class PatternItem {
     this.gap = gridSize / 4;
     this.rate = rate;
     this.scl = 1;
-    this.alp = 0.9;
+    this.alp = 0.95;
   }
 
   update() {

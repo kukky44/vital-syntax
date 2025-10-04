@@ -27,7 +27,7 @@ let indiROffsetX;
 let interval = 60;    // milliseconds per beat
 
 //progress bar
-let progressBarWidth = 16;
+let progressBarWidth = 8;
 let progMargin = 80;
 
 //sarturation, brightness
@@ -92,8 +92,8 @@ function setup() {
   RcurGridX = patternStartX;
   RcurGridY = patternStartY;
 
-  leftSensors = new SerialManager('/dev/tty.usbmodemFX2348N1');
-  rightSensors = new SerialManager('/dev/tty.usbmodem14301');
+  leftSensors = new SerialManager('/dev/tty.usbmodem3');
+  rightSensors = new SerialManager('/dev/tty.usbmodemFX2348N1');
 
   colorMode(HSB);
 
@@ -117,6 +117,7 @@ function draw() {
   if(isFinishing && frameCount - finishedFrame > 400) {
     savePattern();
     resetGrid();
+    hideFinishedAnimation();
     hideCanvas();
   }
 
@@ -133,18 +134,20 @@ function draw() {
   }
   pop();
 
-  logg('lBPM: ' + leftSensors.bpmValue + ', lTemp: ' + leftSensors.tempValue);
-  logg('rBPM: ' + rightSensors.bpmValue + ', rTemp: ' + rightSensors.tempValue);
+  // logg('lBPM: ' + leftSensors.bpmValue + ', lTemp: ' + leftSensors.tempValue);
+  // logg('rBPM: ' + rightSensors.bpmValue + ', rTemp: ' + rightSensors.tempValue);
+  // logg('leftBeat: ' + leftSensors.isBeatChecked);
+  // logg('rightBeat: ' + rightSensors.isBeatChecked);
   // logg('BPM: ' + bpmValue + ', Temp: ' + tempValue);
 
   //left color
   leftCTemp = lerp(leftCTemp, leftSensors.tempValue, 0.1);
-  leftCValue = Math.round(map(leftCTemp, 25, 39, 140, 360));
+  leftCValue = Math.round(map(leftCTemp, 25, 39, 200, 360));
   if(leftCValue < 0) leftCValue = 360 + leftCValue;
 
   //right color
   rightCTemp = lerp(rightCTemp, rightSensors.tempValue, 0.1);
-  rightCValue = Math.round(map(rightCTemp, 25, 41, 140, 360));
+  rightCValue = Math.round(map(rightCTemp, 25, 41, 200, 360));
   if(rightCValue < 0) rightCValue = 360 + rightCValue;
 
   //detect the hand and add pattern
@@ -155,6 +158,7 @@ function draw() {
       lRate = leftSensors.bpmValue;
       leftSensors.isActive = true;
       hideLoader('left');
+      hidePrompt('left');
 
       if(frameCount % 15 === 0) {
         if(L_pattern.length < maxPatternItem) {
@@ -162,13 +166,19 @@ function draw() {
         }
       }
     } else {
-      showPressingMessage();
-      showLoader('left');
+      if(leftSensors.isBeatChecked) {
+        showLoader('left');
+        hidePrompt('left');
+      } else {
+        showPrompt('left');
+        hideLoader('left');
+      }
     }
   } else {
     lRate = defalutRate;
     leftSensors.isActive = false;
     hideLoader('left');
+    hidePrompt('left');
   }
   //right
   if(rightSensors.irValue > minIr){
@@ -177,6 +187,7 @@ function draw() {
       rRate = rightSensors.bpmValue;
       rightSensors.isActive = true;
       hideLoader('right');
+      hidePrompt('right');
 
       if(frameCount % 15 === 0) {
         if(R_pattern.length < maxPatternItem) {
@@ -184,13 +195,19 @@ function draw() {
         }
       }
     } else {
-      showPressingMessage();
-      showLoader('right');
+      if(rightSensors.isBeatChecked) {
+        showLoader('right');
+        hidePrompt('right');
+      } else {
+        showPrompt('right');
+        hideLoader('right');
+      }
     }
   } else {
     rRate = defalutRate;
     rightSensors.isActive = false;
     hideLoader('right');
+    hidePrompt('right');
   }
 
   //left indicator
@@ -201,19 +218,28 @@ function draw() {
   drawCenterGrid(rectX, rectY);
 
   //draw progress bar
-  if(leftSensors.isActive) drawProgress(indiLOffsetX + progMargin, L_pattern);
-  if(rightSensors.isActive) drawProgress(indiROffsetX - progMargin, R_pattern);
+  if(leftSensors.isActive && !isLeftFinished) drawProgress('left');
+  if(rightSensors.isActive && !isRightFinished) drawProgress('right');
 
   // if(frameCount > 100) noLoop();
 }
 
 let lProgHeight = 0;
 let rPogHeight = 0;
+let progressAmt = 0.1;
+let rad = 4;
 
-function drawProgress(x, patternArray) {
+function drawProgress(side) {
+  let x = indiLOffsetX + progMargin;
+  let patternArray = L_pattern;
+
+  if(side == 'right') {
+    x = indiROffsetX - progMargin;
+    patternArray = R_pattern;
+  }
+
   // Calculate progress (0 to 1)
   let progress = constrain(patternArray.length / maxPatternItem, 0, 1);
-  let rad = 8;
 
   // Draw background bar
   noStroke();
@@ -221,17 +247,21 @@ function drawProgress(x, patternArray) {
   rect(x, rectY, progressBarWidth, rectSize, rad);
 
   // Draw progress fill
-  fill(220, 100, 100); // bright color for progress
-  let filledHeight = rectSize * progress;
-  rect(x, rectY, progressBarWidth, filledHeight, rad);
-}
+  fill(290, 100, 100); // bright color for progress
 
-function showPressingMessage() {
-  textAlign(CENTER);
-  fill(255, 0, 100);
-  noStroke();
-  textSize(20);
-  text("Please press your finger firmly and keep it there for at least 10 seconds!", width / 2, height / 10);
+  // Calculate the filled height using gradua change
+  let targetHeight = rectSize * progress;
+  let filledHeight = 0;
+  if(side == 'left') {
+    filledHeight = lerp(lProgHeight, targetHeight, progressAmt);
+    lProgHeight = filledHeight;
+  } else {
+    filledHeight = lerp(rPogHeight, targetHeight, progressAmt);
+    rPogHeight = filledHeight;
+  }
+
+  // Draw the pregress bar
+  rect(x, rectY, progressBarWidth, filledHeight, rad);
 }
 
 //adds an item for the pattern based on the current rate and temp
@@ -249,6 +279,7 @@ function addPatternItem(side) {
 
     if(L_pattern.length >= maxPatternItem) {
       isLeftFinished = true;
+      showFinishedAnimation('left');
       return;
     }
 
@@ -271,6 +302,7 @@ function addPatternItem(side) {
 
     if(R_pattern.length >= maxPatternItem) {
       isRightFinished = true;
+      showFinishedAnimation('right');
       return;
     }
 
@@ -348,6 +380,10 @@ function resetGrid() {
   isLeftFinished = false;
   isRightFinished = false;
   isFinishing = false;
+  lProgHeight = 0;
+  rPogHeight = 0;
+  leftSensors.reset();
+  rightSensors.reset();
 }
 
 function downloadPattern() {

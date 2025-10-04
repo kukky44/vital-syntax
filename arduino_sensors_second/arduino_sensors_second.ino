@@ -56,7 +56,7 @@ void loop() {
     lastPresenceTime = nowMillis;
     fingerPresent = true;
   }
-
+  
   if (fingerPresent && checkForBeat(irValue) == true)
   {
     //We sensed a beat!
@@ -91,10 +91,15 @@ void loop() {
   if (nowMillis - lastPrintTime >= PRINT_INTERVAL) {
     lastPrintTime = nowMillis;
 
+    int isBeatChecked = 0;
+    if(lastBeat > 3000 && nowMillis - lastBeat < 2000) isBeatChecked = 1;
+
     Serial.print(irValue);
     Serial.print(",");
     Serial.print(beatAvg);
     Serial.print(",");
-    Serial.println(mlx.readObjectTempC());
+    Serial.print(mlx.readObjectTempC());
+    Serial.print(",");
+    Serial.println(isBeatChecked);
   }
 }

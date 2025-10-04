@@ -14,8 +14,36 @@
 
   <body>
     <div id="myCanvas" class="myCanvas">
-      <div id="leftLoader" class="loader left"></div>
-      <div id="rightLoader" class="loader right"></div>
+      <div id="leftLoader" class="loader left">
+        <div class="loadingMsg">Calculating your pulse!</div>
+        <div class="loadingAnimation left"></div>
+      </div>
+      <div id="rightLoader" class="loader right">
+        <div class="loadingMsg">Calculating your pulse!</div>
+        <div class="loadingAnimRightWrapper">
+          <div class="loadingAnimation right"></div>
+        </div>
+      </div>
+
+      <div id="promptLeft" class="prompt left hide">
+        <div class="promptMsg">Please <span>press your fingertip</span> on the black sensor.</div>
+        <div id="fingerLeft" class="fingder left">
+          <img src="./images/finger_left.svg" alt="">
+        </div>
+      </div>
+      <div id="promptRight" class="prompt right hide">
+        <div class="promptMsg">Please <span>press your fingertip</span> on the black sensor.</div>
+        <div id="fingerRight" class="fingder right">
+          <img src="./images/finger_right.svg" alt="">
+        </div>
+      </div>
+
+      <div id="finishedLeft" class="finishedAnimation left">
+        <div class="finishedAnimationContent">Finished Anim</div>
+      </div>
+      <div id="finishedRight" class="finishedAnimation right">
+        <div class="finishedAnimationContent">Finished Anim</div>
+      </div>
     </div>
 
     <div id="gallery" class="gallery hide">

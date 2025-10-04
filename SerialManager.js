@@ -14,6 +14,12 @@ class SerialManager {
     this.irValue = 40000;
     this.bpmValue = 0;
     this.tempValue = 20;
+    this.isBeatChecked = false;
+    this.isActive = false;
+  }
+
+  reset = () => {
+    this.isBeatChecked = false;
     this.isActive = false;
   }
 
@@ -36,10 +42,11 @@ class SerialManager {
     let currentString = this.serial.readLine().trim();
     if (currentString.length > 0) {
       let parts = currentString.split(",");
-      if (parts.length === 3) {
+      if (parts.length === 4) {
         this.irValue = parseInt(parts[0].trim().replace(/[^0-9.]/g, ""));
         this.bpmValue = parseInt(parts[1].trim().replace(/[^0-9.]/g, ""));
         this.tempValue = parseFloat(parts[2].trim().replace(/[^0-9.]/g, ""));
+        this.isBeatChecked = boolean(parseFloat(parts[3].trim().replace(/[^0-9.]/g, "")));
       }
     }
   }

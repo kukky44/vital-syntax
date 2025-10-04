@@ -6,6 +6,7 @@
 html, body {
   margin: 0;
   padding: 0;
+  font-family: Futura, Arial, Helvetica, sans-serif;
   /* max-height: 100vh; */
 }
 
@@ -28,13 +29,118 @@ html, body {
   }
 }
 
+/* Prompt screen */
+.prompt {
+  display: block;
+  transition-behavior: allow-discrete;
+  transition: opacity 1s;
+  opacity: 1;
+
+  position: absolute;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  top: 20%;
+  /* bottom: 10%; */
+  left: 5%;
+  width: 20%;
+  padding: 32px;
+}
+
+.prompt.hide {
+  display: none;
+  opacity: 0;
+}
+
+.prompt.right {
+  left: auto;
+  right: 5%;
+}
+
+.promptMsg {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+.promptMsg span {
+  font-weight: bold;
+  color: #df0707;
+}
+
+
+/* Finished animation */
+.finishedAnimation {
+  position: absolute;
+  top: 30%;
+  left: 8%;
+  display: none;
+  color: #f9f9f9;
+  opacity: 0;
+  background-color: #9201cb;
+  animation-name: finished;
+  animation-duration: 1.2s;
+  animation-fill-mode: forwards;
+  animation-delay: 0.5s;
+}
+
+.finishedAnimation.right {
+  left: auto;
+  right: 8%;
+}
+
+@keyframes finished {
+  0% {
+    opacity: 1;
+    display: block;
+    transform: scale(1);
+  }
+  90% {
+    opacity: 1;
+    display: block;
+    transform: scale(4);
+  }
+  99% {
+    opacity: 0;
+    transform: scale(4);
+    display: block;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+    display: none;
+  }
+}
+
+/* Finger illustrations */
+.fingder {
+  width: 100%;
+}
+
 /* Loader */
 /* HTML: <div class="loader"></div> */
 .loader {
+  top: 19%;
   display: none;
   position: absolute;
   left: 5vh;
-  top: 27%;
+}
+
+.loadingMsg {
+  color: #f9f9f9;
+  margin-bottom: 40px;
+  font-size: 20px;
+}
+
+.loader.right {
+  right: 5vh;
+  left: auto;
+}
+
+.loadingAnimRightWrapper {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.loadingAnimation {
   width: 20px;
   aspect-ratio: 1;
   --c: no-repeat linear-gradient(#fff 0 0);
@@ -51,11 +157,6 @@ html, body {
   50% {background-size: 20% 100%,20% 10% ,20% 100%}
   66% {background-size: 20% 100%,20% 100%,20% 10% }
   100%{background-size: 20% 100%,20% 100%,20% 100%}
-}
-
-.loader.right {
-  right: 5vh;
-  left: auto;
 }
 
 /* -------------
