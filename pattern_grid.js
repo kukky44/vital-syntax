@@ -14,8 +14,8 @@ let rightSensors;
 //gradual change for the temperature
 let leftCTemp = 20;
 let rightCTemp = 20;
-let leftCValue = 140;
-let rightCValue = 140;
+let leftCValue = 200;
+let rightCValue = 200;
 
 //pulse animation
 let indicatorState = {
@@ -92,8 +92,8 @@ function setup() {
   RcurGridX = patternStartX;
   RcurGridY = patternStartY;
 
-  leftSensors = new SerialManager('/dev/tty.usbmodem3');
-  rightSensors = new SerialManager('/dev/tty.usbmodemFX2348N1');
+  leftSensors = new SerialManager('/dev/tty.usbmodemFX2348N1');
+  rightSensors = new SerialManager('/dev/tty.usbmodem3');
 
   colorMode(HSB);
 

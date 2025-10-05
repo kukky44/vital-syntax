@@ -33,7 +33,7 @@ html, body {
 .prompt {
   display: block;
   transition-behavior: allow-discrete;
-  transition: opacity 1s;
+  transition: opacity 0.3s;
   opacity: 1;
 
   position: absolute;
@@ -44,6 +44,12 @@ html, body {
   left: 5%;
   width: 20%;
   padding: 32px;
+}
+
+@starting-style {
+  .prompt {
+    opacity: 0;
+  }
 }
 
 .prompt.hide {
@@ -69,45 +75,20 @@ html, body {
 
 /* Finished animation */
 .finishedAnimation {
-  position: absolute;
-  top: 30%;
-  left: 8%;
   display: none;
+  padding-top: 25vh;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  background: #080808;
+  left: 0;
   color: #f9f9f9;
-  opacity: 0;
-  background-color: #9201cb;
-  animation-name: finished;
-  animation-duration: 1.2s;
-  animation-fill-mode: forwards;
-  animation-delay: 0.5s;
 }
 
 .finishedAnimation.right {
   left: auto;
-  right: 8%;
-}
-
-@keyframes finished {
-  0% {
-    opacity: 1;
-    display: block;
-    transform: scale(1);
-  }
-  90% {
-    opacity: 1;
-    display: block;
-    transform: scale(4);
-  }
-  99% {
-    opacity: 0;
-    transform: scale(4);
-    display: block;
-  }
-  100% {
-    transform: scale(4);
-    opacity: 0;
-    display: none;
-  }
+  right: 0;
 }
 
 /* Finger illustrations */
@@ -248,3 +229,97 @@ html, body {
   display: none;
 }
 
+/* Checkmart animation */
+.animation-ctn{
+  text-align:center;
+  margin-top:5em;
+  /* transform: scale(2); */
+}
+
+@-webkit-keyframes checkmark {
+  0% {
+    stroke-dashoffset: 100px
+  }
+
+  100% {
+    stroke-dashoffset: 200px
+  }
+}
+
+@-ms-keyframes checkmark {
+  0% {
+    stroke-dashoffset: 100px
+  }
+
+  100% {
+    stroke-dashoffset: 200px
+  }
+}
+
+@keyframes checkmark {
+  0% {
+    stroke-dashoffset: 100px
+  }
+
+  100% {
+    stroke-dashoffset: 0px
+  }
+}
+
+@-webkit-keyframes checkmark-circle {
+  0% {
+    stroke-dashoffset: 480px
+  }
+
+  100% {
+    stroke-dashoffset: 960px;
+  }
+}
+
+@-ms-keyframes checkmark-circle {
+  0% {
+    stroke-dashoffset: 240px
+  }
+
+  100% {
+    stroke-dashoffset: 480px
+  }
+}
+
+@keyframes checkmark-circle {
+  0% {
+    stroke-dashoffset: 480px
+  }
+
+  100% {
+    stroke-dashoffset: 960px
+  }
+}
+
+@keyframes colored-circle {
+  0% {
+    opacity:0
+  }
+
+  100% {
+    opacity:100
+  }
+}
+
+.inlinesvg .svg svg {
+  display: inline
+}
+
+.icon--order-success svg polyline {
+  -webkit-animation: checkmark 0.25s ease-in-out 0.7s backwards;
+  animation: checkmark 0.25s ease-in-out 0.7s backwards
+}
+
+.icon--order-success svg circle {
+  -webkit-animation: checkmark-circle 0.6s ease-in-out backwards;
+  animation: checkmark-circle 0.6s ease-in-out backwards;
+}
+.icon--order-success svg circle#colored {
+  -webkit-animation: colored-circle 0.6s ease-in-out 0.7s backwards;
+  animation: colored-circle 0.6s ease-in-out 0.7s backwards;
+}

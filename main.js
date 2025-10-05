@@ -46,11 +46,15 @@ const finishedLeft = document.getElementById('finishedLeft');
 const finishedRight = document.getElementById('finishedRight');
 function showFinishedAnimation(side) {
   if(side == 'left') {
-    finishedLeft.style.display = 'none';
-    finishedLeft.style.display = 'block';
+    setTimeout(() => {
+      finishedLeft.style.display = 'none';
+      finishedLeft.style.display = 'block';
+    }, 500);
   } else {
-    finishedRight.style.display = 'none';
-    finishedRight.style.display = 'block';
+    setTimeout(() => {
+      finishedRight.style.display = 'none';
+      finishedRight.style.display = 'block';
+    }, 500);
   }
 }
 
