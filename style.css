@@ -58,18 +58,24 @@ html, body {
 }
 
 .toast.center::after {
+  visibility: hidden;
   content: "";
   position: fixed;
   height: 100%;
   top: 0;
   bottom: 0;
   left: 0;
-  right: 0;
+  width: 0px;
   background-color: transparent;
   box-sizing: border-box;
   border-radius: 2px;
-  border-bottom: 4px solid #eaeaea;
-  border-top: 4px solid #eaeaea;
+  border-bottom: 3px solid #eaeaea;
+  transition: width 2.8s linear, visibility 0s;
+}
+
+.toast.center.show::after {
+  visibility: visible;
+  width: 100%;
 }
 
 .toast.show {

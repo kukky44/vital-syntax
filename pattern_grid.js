@@ -1,21 +1,21 @@
 let myCanvas;
 
-let minIr = 40000;
-let defalutRate = 40;
-let maxRate = 140;
+const minIr = 40000;
+const defalutRate = 40;
+const maxRate = 140;
 let rRate = defalutRate;
 let lRate = defalutRate;
 let prevRate = defalutRate;
 
 //for arduino sensors
-let leftSensors;
-let rightSensors;
+let leftReader;
+let rightReader;
 
 //gradual change for the temperature
-let tempStart = 25;
-let tempEnd = 39;
-let colorStart = 100;
-let colorEnd = 360;
+const tempStart = 25;
+const tempEnd = 39;
+const colorStart = 100;
+const colorEnd = 360;
 let leftCTemp = 20;
 let rightCTemp = 20;
 let leftCValue = colorStart;
@@ -31,15 +31,15 @@ let indicatorState = {
 let indiLOffsetX;
 let indiROffsetX;
 let interval = 60;    // milliseconds per beat
-let indicatorCircleSize = 60;
+const indicatorCircleSize = 60;
 
 //progress bar
-let progressBarWidth = 8;
-let progMargin = 80;
+const progressBarWidth = 8;
+const progMargin = 80;
 
 //sarturation, brightness
-let sat = 100;
-let brt = 100;
+const sat = 100;
+const brt = 100;
 
 //center rect
 let rectSize;
@@ -47,8 +47,8 @@ let rectX, rectY;
 let pg;
 
 //grid
-let gridItemRow = 6;
-let maxPatternItem = gridItemRow ** 2;
+const gridItemRow = 6;
+const maxPatternItem = gridItemRow ** 2;
 let gridSize;
 
 //track current grid position to draw pattern
@@ -66,15 +66,13 @@ let leftAnimStartX;
 let rightAnimStartX;
 let animStartY;
 const ANIM_SPEED = 0.01;
-let isLeftStarted = false;
-let isRightStarted = false;
-let isLeftLost = false;
-let isRightLost = false;
-let isLeftFinished = false;
-let isRightFinished = false;
 let finishedFrame = 0;
 let isFinishing = false;
 let isReturning = false;
+
+//sensor state
+let leftState;
+let rightState;
 
 //time manager
 let timeManager;
@@ -112,10 +110,13 @@ function setup() {
   RcurGridX = patternStartX;
   RcurGridY = patternStartY;
 
-  leftSensors = new SerialManager('/dev/tty.usbmodemFX2348N1');
-  rightSensors = new SerialManager('/dev/tty.usbmodem3');
+  leftReader = new SerialManager('/dev/tty.usbmodemFX2348N1');
+  rightReader = new SerialManager('/dev/tty.usbmodem3');
 
   timeManager = new TimeManager();
+
+  leftState = new SensorState('left', timeManager);
+  rightState = new SensorState('right', timeManager);
 
   colorMode(HSB);
 
@@ -137,11 +138,11 @@ function draw() {
     timeManager.mark('finishedTransition');
   }
 
-  if(isLeftFinished && isRightFinished) {
+  if(leftState.isFinished && rightState.isFinished) {
     finishedFrame = frameCount;
     isFinishing = true;
-    isLeftFinished = false;
-    isRightFinished = false;
+    leftState.isFinished = false;
+    rightState.isFinished = false;
   }
 
   if(isFinishing && frameCount - finishedFrame > 300) {
@@ -165,105 +166,36 @@ function draw() {
   }
   pop();
 
-  // logg('lBPM: ' + leftSensors.bpmValue + ', lTemp: ' + leftSensors.tempValue);
-  // logg('rBPM: ' + rightSensors.bpmValue + ', rTemp: ' + rightSensors.tempValue);
-  // logg('leftBeat: ' + leftSensors.isBeatChecked);
-  // logg('rightBeat: ' + rightSensors.isBeatChecked);
+  // logg('lBPM: ' + leftReader.bpmValue + ', lTemp: ' + leftReader.tempValue);
+  // logg('rBPM: ' + rightReader.bpmValue + ', rTemp: ' + rightReader.tempValue);
+  // logg('leftBeat: ' + leftReader.isBeatChecked);
+  // logg('rightBeat: ' + rightReader.isBeatChecked);
   // logg('BPM: ' + bpmValue + ', Temp: ' + tempValue);
 
   //left color
-  leftCTemp = lerp(leftCTemp, leftSensors.tempValue, 0.1);
+  leftCTemp = lerp(leftCTemp, leftReader.tempValue, 0.1);
   leftCValue = Math.round(map(leftCTemp, tempStart, tempEnd, colorStart, colorEnd));
   if(leftCValue < 0) leftCValue = 360 + leftCValue;
 
   //right color
-  rightCTemp = lerp(rightCTemp, rightSensors.tempValue, 0.1);
+  rightCTemp = lerp(rightCTemp, rightReader.tempValue, 0.1);
   rightCValue = Math.round(map(rightCTemp, tempStart, tempEnd, colorStart, colorEnd));
   if(rightCValue < 0) rightCValue = 360 + rightCValue;
 
   //detect the hand and add pattern
-  //left
-  if(leftSensors.irValue > minIr && !isLeftFinished){
-    showCanvas();
-    isLeftStarted = true;
-    leftSensors.isTouched = true;
-    if(isLeftLost) {
-      hideMessage('left');
-      isLeftLost = false;
-    }
-    if(leftSensors.bpmValue > defalutRate) {
-      lRate = leftSensors.bpmValue;
-      leftSensors.isActive = true;
-      hideLoader('left');
-      hidePrompt('left');
-
-      if(frameCount % 15 === 0) {
-        if(L_pattern.length < maxPatternItem) {
-          addPatternItem('left');
-        }
-      }
-    } else {
-      if(leftSensors.isBeatChecked) {
-        showLoader('left');
-        hidePrompt('left');
-      } else {
-        showPrompt('left');
-        hideLoader('left');
-      }
-    }
-  } else {
-    lRate = defalutRate;
-    leftSensors.isActive = false;
-    leftSensors.isTouched = false;
-    hideLoader('left');
-    hidePrompt('left');
-  }
-
-  //right
-  if(rightSensors.irValue > minIr && !isRightFinished){
-    showCanvas();
-    rightSensors.isTouched = true;
-    isRightStarted = true;
-    hideMessage('right');
-    isRightLost = false;
-    if(rightSensors.bpmValue > defalutRate) {
-      rRate = rightSensors.bpmValue;
-      rightSensors.isActive = true;
-      hideLoader('right');
-      hidePrompt('right');
-
-      if(frameCount % 15 === 0) {
-        if(R_pattern.length < maxPatternItem) {
-          addPatternItem('right');
-        }
-      }
-    } else {
-      if(rightSensors.isBeatChecked) {
-        showLoader('right');
-        hidePrompt('right');
-      } else {
-        showPrompt('right');
-        hideLoader('right');
-      }
-    }
-  } else {
-    rRate = defalutRate;
-    rightSensors.isActive = false;
-    rightSensors.isTouched = false;
-    hideLoader('right');
-    hidePrompt('right');
-  }
+  processTouch('left', leftReader, leftState);
+  processTouch('right', rightReader, rightState);
 
   //left indicator
-  drawIndicator(leftSensors, leftCValue, indiLOffsetX, rectY + 30, indicatorState.left, lRate);
+  drawIndicator(leftState, leftCValue, indiLOffsetX, rectY + 30, indicatorState.left, lRate);
   //right indicator
-  drawIndicator(rightSensors, rightCValue, indiROffsetX, rectY + 30, indicatorState.right, rRate);
+  drawIndicator(rightState, rightCValue, indiROffsetX, rectY + 30, indicatorState.right, rRate);
 
   drawCenterGrid(rectX, rectY);
 
   //draw progress bar
-  if(leftSensors.isActive && !isLeftFinished) drawProgress('left');
-  if(rightSensors.isActive && !isRightFinished) drawProgress('right');
+  if(leftState.isActive && !leftState.isFinished) drawProgress('left');
+  if(rightState.isActive && !rightState.isFinished) drawProgress('right');
 
   //handle edge cases
   handleInactivity();
@@ -272,7 +204,7 @@ function draw() {
 }
 
 function handleInactivity() {
-  if(!leftSensors.isTouched && !rightSensors.isTouched && !isLeftFinished && !isRightFinished) {
+  if(!leftState.isTouched && !rightState.isTouched && !leftState.isFinished && !rightState.isFinished) {
     if (timeManager.hasElapsed('lastTouch', 5000)) {
       showMessage('center', 'Returning to gallery.');
       hideMessage('left');
@@ -283,27 +215,25 @@ function handleInactivity() {
     }
   }
 
-  if(isLeftStarted && !leftSensors.isTouched && !isLeftFinished && !isFinishing && !isLeftLost) {
-    showMessage('left', 'Connection lost. Please place your hand again.');
-    isLeftLost = true;
+  if(leftState.isStarted && !leftState.isTouched && !leftState.isFinished && !isFinishing && !leftState.isLost) {
+    leftState.markLost();
   }
 
-  if(isRightStarted && !rightSensors.isTouched && !isRightFinished && !isFinishing && !isRightLost) {
-    showMessage('right', 'Connection lost. Please place your hand again.');
-    isRightLost = true;
+  if(rightState.isStarted && !rightState.isTouched && !rightState.isFinished && !isFinishing && !rightState.isLost) {
+    rightState.markLost();
   }
 
   // mark when each side last touched
-  if (leftSensors.isTouched) timeManager.mark('lastTouch');
-  if (rightSensors.isTouched) timeManager.mark('lastTouch');
+  if (leftState.isTouched) timeManager.mark('lastTouch');
+  if (rightState.isTouched) timeManager.mark('lastTouch');
 
   // mark when each pattern finishes
-  if (isLeftFinished) timeManager.mark('leftFinished');
-  if (isRightFinished) timeManager.mark('rightFinished');
+  if (leftState.isFinished) timeManager.mark('leftFinished');
+  if (rightState.isFinished) timeManager.mark('rightFinished');
 }
 
 function handleAsymmetricFinish() {
-  if (isLeftFinished && !isRightFinished) {
+  if (leftState.isFinished && !rightState.isFinished) {
     if (!timeManager.events['waitingRight']) {
       timeManager.mark('waitingRight');
       showMessage('center', 'One signal received — awaiting the other.');
@@ -315,7 +245,7 @@ function handleAsymmetricFinish() {
     }
   }
 
-  if (isRightFinished && !isLeftFinished) {
+  if (rightState.isFinished && !leftState.isFinished) {
     if (!timeManager.events['waitingLeft']) {
       timeManager.mark('waitingLeft');
       showMessage('center', 'One signal received — awaiting the other.');
@@ -336,24 +266,44 @@ function handleFinishedTransition() {
   }
 }
 
-// function showMessage(type, msg) {
-//   let textX = width / 2;
-//   let offset = indicatorCircleSize / 2;
-//   textAlign(CENTER);
-//   textSize(24);
-//   if(type == 'left') {
-//     textX = indiLOffsetX - offset;
-//     textSize(16);
-//     textAlign(LEFT);
-//   } else if (type == 'right') {
-//     textX = indiROffsetX + offset;
-//     textSize(16);
-//     textAlign(RIGHT);
-//   }
-//   fill(255);
-//   noStroke();
-//   text(msg, textX, height / 6);
-// }
+//helper function for left/right sensor handling
+function processTouch(side, reader, state) {
+  const isLeft = side === 'left';
+  const readerBpm = reader.bpmValue;
+
+  if (reader.irValue > minIr && !state.isFinished) {
+    state.start();
+    state.markTouched();
+
+    if (readerBpm > defalutRate) {
+      if (isLeft) lRate = readerBpm; else rRate = readerBpm;
+      state.markActive();
+      hideLoader(side);
+      hidePrompt(side);
+
+      if (frameCount % 15 === 0) {
+        const patternArray = isLeft ? L_pattern : R_pattern;
+        if (patternArray.length < maxPatternItem) {
+          addPatternItem(side);
+        }
+      }
+    } else {
+      if (reader.isBeatChecked) {
+        showLoader(side);
+        hidePrompt(side);
+      } else {
+        showPrompt(side);
+        hideLoader(side);
+      }
+    }
+  } else {
+    if (isLeft) lRate = defalutRate; else rRate = defalutRate;
+    state.markActive(false);
+    state.markTouched(false);
+    hideLoader(side);
+    hidePrompt(side);
+  }
+}
 
 let lProgHeight = 0;
 let rPogHeight = 0;
@@ -409,7 +359,7 @@ function addPatternItem(side) {
     }
 
     if(L_pattern.length >= maxPatternItem) {
-      isLeftFinished = true;
+      leftState.markFinished();
       showFinishedAnimation('left');
       return;
     }
@@ -432,7 +382,7 @@ function addPatternItem(side) {
     }
 
     if(R_pattern.length >= maxPatternItem) {
-      isRightFinished = true;
+      rightState.markFinished();
       showFinishedAnimation('right');
       return;
     }
@@ -459,6 +409,7 @@ function drawCenterGrid(x, y, g = window) {
 }
 
 function drawIndicator(sensor, cValue, offsetX, offsetY, state, rate) {
+  if(sensor.isFinished) return;
   //temp circle
   noStroke();
   fill(cValue, sat, brt);
@@ -508,17 +459,15 @@ function resetGrid() {
   LcurGridY = patternStartY;
   RcurGridX = patternStartX;
   RcurGridY = patternStartY;
-  isLeftStarted = false;
-  isRightStarted = false;
-  isLeftFinished = false;
-  isRightFinished = false;
   isFinishing = false;
   isReturning = false;
   lProgHeight = 0;
   rPogHeight = 0;
-  leftSensors.reset();
-  rightSensors.reset();
+  leftReader.reset();
+  rightReader.reset();
   timeManager.reset();
+  leftState.reset();
+  rightState.reset();
 }
 
 function downloadPattern() {
@@ -591,9 +540,9 @@ function keyPressed(){
 
   if(key == "n") {
     // resetGrid();
-    let temp = leftSensors;
-    leftSensors = rightSensors;
-    rightSensors = temp;
+    let temp = leftReader;
+    leftReader = rightReader;
+    rightReader = temp;
   }
 
   if(key == "d"){

@@ -15,15 +15,13 @@ class SerialManager {
     this.bpmValue = 0;
     this.tempValue = 20;
     this.isBeatChecked = false;
-    this.isActive = false;
-    this.isTouched = false;
+    this.isFake = false;
     this.dataCount = 0;
   }
 
   reset = () => {
     this.isBeatChecked = false;
-    this.isActive = false;
-    this.isTouched = false;
+    this.isFake = false;
     this.dataCount = 0;
   }
 
@@ -50,19 +48,19 @@ class SerialManager {
         this.irValue = parseInt(parts[0].trim().replace(/[^0-9.]/g, ""));
         this.bpmValue = parseInt(parts[1].trim().replace(/[^0-9.]/g, ""));
         this.tempValue = parseFloat(parts[2].trim().replace(/[^0-9.]/g, ""));
-        const isChecked = boolean(parseFloat(parts[3].trim().replace(/[^0-9.]/g, "")));
+        const isChecked = boolean(parseInt(parts[3].trim().replace(/[^0-9.]/g, "")));
         if(isChecked) this.isBeatChecked = true;
       }
     }
 
     //in case the reading is not going well
     //use fake value to avoid awkward moment at the exhibition
-    if(this.dataCount > 200 && this.isTouched) {
+    if(this.dataCount > 200 && this.isFake) {
       const fakeBpm = map(this.irValue, 110000, 150000, 59, 91);
       // this.bpmValue = fakeBpm;
     }
 
-    if(this.isTouched) this.dataCount++;
+    if(this.isFake) this.dataCount++;
   }
 
   gotError = (theerror) => {
