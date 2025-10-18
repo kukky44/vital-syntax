@@ -11,7 +11,7 @@ function showCanvas() {
   galleryEl.classList.add('hide');
 }
 
-hideCanvas();
+// hideCanvas();
 
 //loading animation
 const leftLoader = document.getElementById('leftLoader');
@@ -92,6 +92,29 @@ document.addEventListener('DOMContentLoaded', function () {
     })
     .catch(err => console.error("Error loading images:", err));
 });
+
+//Toast
+function showMessage(type, message, options = {}) {
+  const { duration = null, persistent = false } = options;
+  const el = document.getElementById(`msg-${type}`);
+  if (!el) return;
+
+  el.textContent = message;
+  el.classList.add('show');
+  el.dataset.persistent = persistent; // mark persistent state
+
+  if (!persistent && duration) {
+    clearTimeout(el.hideTimeout);
+    el.hideTimeout = setTimeout(() => hideMessage(type), duration);
+  }
+}
+
+function hideMessage(type) {
+  const el = document.getElementById(`msg-${type}`);
+  if (!el) return;
+  el.classList.remove('show');
+  el.dataset.persistent = false;
+}
 
 function addPatternSlide(imgPath) {
   // Extract filename without extension (assuming it's a timestamp)

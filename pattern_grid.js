@@ -12,19 +12,26 @@ let leftSensors;
 let rightSensors;
 
 //gradual change for the temperature
+let tempStart = 25;
+let tempEnd = 39;
+let colorStart = 100;
+let colorEnd = 360;
 let leftCTemp = 20;
 let rightCTemp = 20;
-let leftCValue = 200;
-let rightCValue = 200;
+let leftCValue = colorStart;
+let rightCValue = colorStart;
 
 //pulse animation
 let indicatorState = {
   left: {lastBeat: 0, pulse: 0},
   right: {lastBeat: 0, pulse: 0}
 }
+
+//indicator
 let indiLOffsetX;
 let indiROffsetX;
 let interval = 60;    // milliseconds per beat
+let indicatorCircleSize = 60;
 
 //progress bar
 let progressBarWidth = 8;
@@ -59,15 +66,28 @@ let leftAnimStartX;
 let rightAnimStartX;
 let animStartY;
 const ANIM_SPEED = 0.01;
+let isLeftStarted = false;
+let isRightStarted = false;
+let isLeftLost = false;
+let isRightLost = false;
 let isLeftFinished = false;
 let isRightFinished = false;
 let finishedFrame = 0;
 let isFinishing = false;
+let isReturning = false;
+
+//time manager
+let timeManager;
+
+let font;
 
 function setup() {
   myCanvas = createCanvas(windowWidth, windowHeight);
   myCanvas.parent('myCanvas');
   noFill();
+
+  font = loadFont('./font/FuturaCyrillicMedium.ttf');
+  textFont(font);
 
   rectSize = height / 2;
   rectX = width / 2 - rectSize / 2;
@@ -95,17 +115,27 @@ function setup() {
   leftSensors = new SerialManager('/dev/tty.usbmodemFX2348N1');
   rightSensors = new SerialManager('/dev/tty.usbmodem3');
 
+  timeManager = new TimeManager();
+
   colorMode(HSB);
 
   //for saving pattern
   pg = createGraphics(rectSize + 3, rectSize + 3);
   pg.colorMode(HSB);
+  pg.pixelDensity(3);
 
   // showSample();
 }
 
 function draw() {
   background(3);
+
+  if(timeManager.hasElapsed('returnGallery', 3000)) {
+    resetGrid();
+    hideFinishedAnimation();
+    hideCanvas();
+    timeManager.mark('finishedTransition');
+  }
 
   if(isLeftFinished && isRightFinished) {
     finishedFrame = frameCount;
@@ -114,11 +144,12 @@ function draw() {
     isRightFinished = false;
   }
 
-  if(isFinishing && frameCount - finishedFrame > 400) {
+  if(isFinishing && frameCount - finishedFrame > 300) {
     savePattern();
     resetGrid();
     hideFinishedAnimation();
     hideCanvas();
+    timeManager.mark('finishedTransition');
   }
 
   push();
@@ -142,18 +173,24 @@ function draw() {
 
   //left color
   leftCTemp = lerp(leftCTemp, leftSensors.tempValue, 0.1);
-  leftCValue = Math.round(map(leftCTemp, 25, 39, 200, 360));
+  leftCValue = Math.round(map(leftCTemp, tempStart, tempEnd, colorStart, colorEnd));
   if(leftCValue < 0) leftCValue = 360 + leftCValue;
 
   //right color
   rightCTemp = lerp(rightCTemp, rightSensors.tempValue, 0.1);
-  rightCValue = Math.round(map(rightCTemp, 25, 41, 200, 360));
+  rightCValue = Math.round(map(rightCTemp, tempStart, tempEnd, colorStart, colorEnd));
   if(rightCValue < 0) rightCValue = 360 + rightCValue;
 
   //detect the hand and add pattern
   //left
-  if(leftSensors.irValue > minIr){
+  if(leftSensors.irValue > minIr && !isLeftFinished){
     showCanvas();
+    isLeftStarted = true;
+    leftSensors.isTouched = true;
+    if(isLeftLost) {
+      hideMessage('left');
+      isLeftLost = false;
+    }
     if(leftSensors.bpmValue > defalutRate) {
       lRate = leftSensors.bpmValue;
       leftSensors.isActive = true;
@@ -177,12 +214,18 @@ function draw() {
   } else {
     lRate = defalutRate;
     leftSensors.isActive = false;
+    leftSensors.isTouched = false;
     hideLoader('left');
     hidePrompt('left');
   }
+
   //right
-  if(rightSensors.irValue > minIr){
+  if(rightSensors.irValue > minIr && !isRightFinished){
     showCanvas();
+    rightSensors.isTouched = true;
+    isRightStarted = true;
+    hideMessage('right');
+    isRightLost = false;
     if(rightSensors.bpmValue > defalutRate) {
       rRate = rightSensors.bpmValue;
       rightSensors.isActive = true;
@@ -206,6 +249,7 @@ function draw() {
   } else {
     rRate = defalutRate;
     rightSensors.isActive = false;
+    rightSensors.isTouched = false;
     hideLoader('right');
     hidePrompt('right');
   }
@@ -221,8 +265,95 @@ function draw() {
   if(leftSensors.isActive && !isLeftFinished) drawProgress('left');
   if(rightSensors.isActive && !isRightFinished) drawProgress('right');
 
-  // if(frameCount > 100) noLoop();
+  //handle edge cases
+  handleInactivity();
+  // handleAsymmetricFinish();
+  // handleFinishedTransition();
 }
+
+function handleInactivity() {
+  if(!leftSensors.isTouched && !rightSensors.isTouched && !isLeftFinished && !isRightFinished) {
+    if (timeManager.hasElapsed('lastTouch', 5000)) {
+      showMessage('center', 'Returning to gallery.');
+      hideMessage('left');
+      hideMessage('right');
+      if(!isReturning) timeManager.mark('returnGallery');
+      isReturning = true;
+      return;
+    }
+  }
+
+  if(isLeftStarted && !leftSensors.isTouched && !isLeftFinished && !isFinishing && !isLeftLost) {
+    showMessage('left', 'Connection lost. Please place your hand again.');
+    isLeftLost = true;
+  }
+
+  if(isRightStarted && !rightSensors.isTouched && !isRightFinished && !isFinishing && !isRightLost) {
+    showMessage('right', 'Connection lost. Please place your hand again.');
+    isRightLost = true;
+  }
+
+  // mark when each side last touched
+  if (leftSensors.isTouched) timeManager.mark('lastTouch');
+  if (rightSensors.isTouched) timeManager.mark('lastTouch');
+
+  // mark when each pattern finishes
+  if (isLeftFinished) timeManager.mark('leftFinished');
+  if (isRightFinished) timeManager.mark('rightFinished');
+}
+
+function handleAsymmetricFinish() {
+  if (isLeftFinished && !isRightFinished) {
+    if (!timeManager.events['waitingRight']) {
+      timeManager.mark('waitingRight');
+      showMessage('center', 'One signal received — awaiting the other.');
+    }
+    if (timeManager.hasElapsed('waitingRight', 10000)) {
+      showMessage('center', 'Connection incomplete — pattern saved.');
+      finalizeSoloPattern('left');
+      timeManager.clear('waitingRight');
+    }
+  }
+
+  if (isRightFinished && !isLeftFinished) {
+    if (!timeManager.events['waitingLeft']) {
+      timeManager.mark('waitingLeft');
+      showMessage('center', 'One signal received — awaiting the other.');
+    }
+    if (timeManager.hasElapsed('waitingLeft', 10000)) {
+      showMessage('center', 'Connection incomplete — pattern saved.');
+      finalizeSoloPattern('right');
+      timeManager.clear('waitingLeft');
+    }
+  }
+}
+
+function handleFinishedTransition() {
+  if (timeManager.hasElapsed('finishedTransition', 2000)) {
+    inputEnabled = true;
+  } else {
+    inputEnabled = false;
+  }
+}
+
+// function showMessage(type, msg) {
+//   let textX = width / 2;
+//   let offset = indicatorCircleSize / 2;
+//   textAlign(CENTER);
+//   textSize(24);
+//   if(type == 'left') {
+//     textX = indiLOffsetX - offset;
+//     textSize(16);
+//     textAlign(LEFT);
+//   } else if (type == 'right') {
+//     textX = indiROffsetX + offset;
+//     textSize(16);
+//     textAlign(RIGHT);
+//   }
+//   fill(255);
+//   noStroke();
+//   text(msg, textX, height / 6);
+// }
 
 let lProgHeight = 0;
 let rPogHeight = 0;
@@ -331,7 +462,7 @@ function drawIndicator(sensor, cValue, offsetX, offsetY, state, rate) {
   //temp circle
   noStroke();
   fill(cValue, sat, brt);
-  circle(offsetX, offsetY + 90, 60);
+  circle(offsetX, offsetY + 90, indicatorCircleSize);
 
   interval = (60 / rate) * 1000; // ms per beat
   // check if it's time for a new beat
@@ -365,7 +496,7 @@ function drawIndicator(sensor, cValue, offsetX, offsetY, state, rate) {
     }
     endShape(CLOSE);
   } else {
-    circle(offsetX, offsetY, 60);
+    circle(offsetX, offsetY, indicatorCircleSize);
   }
   pop();
 }
@@ -377,18 +508,23 @@ function resetGrid() {
   LcurGridY = patternStartY;
   RcurGridX = patternStartX;
   RcurGridY = patternStartY;
+  isLeftStarted = false;
+  isRightStarted = false;
   isLeftFinished = false;
   isRightFinished = false;
   isFinishing = false;
+  isReturning = false;
   lProgHeight = 0;
   rPogHeight = 0;
   leftSensors.reset();
   rightSensors.reset();
+  timeManager.reset();
 }
 
 function downloadPattern() {
   //draw on the offscreen canvas to save
   pg.clear();
+  pg.pixelDensity(8);
   pg.background(10);
   pg.push();
   //move the half of the stroke width to include the whole grid stroke
@@ -400,8 +536,7 @@ function downloadPattern() {
 
   //save using the current timestamp
   let timestamp = Date.now();
-  save(pg, `${timestamp.toString()}.png`);
-  addPatternSlide(timestamp);
+  save(pg, `example_patterns.png`);
 }
 
 function savePattern() {

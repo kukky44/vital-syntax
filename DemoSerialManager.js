@@ -12,8 +12,8 @@ class SerialManager {
     // this.serial.list();
 
     this.irValue = 40000;
-    this.bpmValue = 0;
-    this.tempValue = 20;
+    this.bpmValue = Math.round(random(65, 85));
+    this.tempValue = Math.round(random(25, 39));
     this.isBeatChecked = false;
     this.isActive = false;
     this.isTouched = false;
@@ -47,16 +47,15 @@ class SerialManager {
     if (currentString.length > 0) {
       let parts = currentString.split(",");
       if (parts.length === 4) {
-        this.irValue = parseInt(parts[0].trim().replace(/[^0-9.]/g, ""));
-        this.bpmValue = parseInt(parts[1].trim().replace(/[^0-9.]/g, ""));
-        this.tempValue = parseFloat(parts[2].trim().replace(/[^0-9.]/g, ""));
-        const isChecked = boolean(parseFloat(parts[3].trim().replace(/[^0-9.]/g, "")));
+        this.irValue = 130000;
+        this.bpmValue += Math.round(noise(frameCount, this.bpmValue)*1.5);
+        // console.log(this.bpmValue);
+        this.tempValue += Math.round((0.5 - noise(frameCount, this.tempValue))*2);
+        const isChecked = true;
         if(isChecked) this.isBeatChecked = true;
       }
     }
 
-    //in case the reading is not going well
-    //use fake value to avoid awkward moment at the exhibition
     if(this.dataCount > 200 && this.isTouched) {
       const fakeBpm = map(this.irValue, 110000, 150000, 59, 91);
       // this.bpmValue = fakeBpm;
