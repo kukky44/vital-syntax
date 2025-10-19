@@ -11,7 +11,7 @@ function showCanvas() {
   galleryEl.classList.add('hide');
 }
 
-// hideCanvas();
+hideCanvas();
 
 //loading animation
 const leftLoader = document.getElementById('leftLoader');
@@ -94,26 +94,66 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 //Toast
-function showMessage(type, message, options = {}) {
-  const { duration = null, persistent = false } = options;
-  const el = document.getElementById(`msg-${type}`);
+function showMessage(position, message, type = 'normal', extraClass = "") {
+  const el = document.getElementById(`msg-${position}`);
   if (!el) return;
 
-  el.textContent = message;
-  el.classList.add('show');
-  el.dataset.persistent = persistent; // mark persistent state
+  el.classList.remove('hideLoad');
 
-  if (!persistent && duration) {
-    clearTimeout(el.hideTimeout);
-    el.hideTimeout = setTimeout(() => hideMessage(type), duration);
+  let classes = [];
+
+  if(type === 'awaiting') {
+    if(!el.classList.contains('awaiting')) classes.push('awaiting');
+  } else {
+    el.classList.remove('awaiting');
+  }
+
+  if(type === 'awaiting_extra') {
+    if(!el.classList.contains('awaiting')) classes.push('awaiting');
+    if(!el.classList.contains('extra')) classes.push('extra');
+  } else {
+    el.classList.remove('awaiting', 'extra');
+  }
+
+  if(type === 'delay') {
+    classes.push('delay');
+  }
+
+  if(type === 'long') {
+    classes.push('long');
+  }
+
+  if(extraClass) classes.push(extraClass);
+
+  classes.push('show');
+  el.textContent = message;
+  if(!el.classList.contains('show')) el.classList.add(...classes);
+}
+
+function toggleToastLoading(position, hide = true) {
+  const el = document.getElementById(`msg-${position}`);
+  if (!el) return;
+
+  if(hide) {
+    if(!el.classList.contains('hideLoad')) el.classList.add('hideLoad');
+  }else {
+    el.classList.remove('hideLoad');
   }
 }
 
-function hideMessage(type) {
-  const el = document.getElementById(`msg-${type}`);
+function hideAllMessages() {
+  const left = document.getElementById('msg-left');
+  const center = document.getElementById('msg-center');
+  const right = document.getElementById('msg-right');
+  left.className = 'toast left';
+  center.className = 'toast center';
+  right.className = 'toast right';
+}
+
+function hideMessage(position) {
+  const el = document.getElementById(`msg-${position}`);
   if (!el) return;
-  el.classList.remove('show');
-  el.dataset.persistent = false;
+  el.className = `toast ${position}`;
 }
 
 function addPatternSlide(imgPath) {
@@ -142,6 +182,13 @@ function addPatternSlide(imgPath) {
   const container = document.createElement("div");
   container.classList.add("pattern_container");
 
+  const timestampWrapperDiv = document.createElement("div");
+  timestampWrapperDiv.classList.add("pattern_timestamp-wrapper");
+
+  const timestampTextDiv = document.createElement("div");
+  timestampTextDiv.classList.add("pattern_timestamp-text");
+  timestampTextDiv.textContent = "Generated at";
+
   const timestampDiv = document.createElement("div");
   timestampDiv.classList.add("pattern_timestamp");
 
@@ -154,12 +201,13 @@ function addPatternSlide(imgPath) {
   timeDiv.textContent = formattedTime;
 
   timestampDiv.append(dateDiv, timeDiv);
+  timestampWrapperDiv.append(timestampTextDiv, timestampDiv);
 
   const img = document.createElement("img");
   img.src = imgPath;
   img.alt = `Pattern from ${formattedDate} ${formattedTime}`;
 
-  container.append(timestampDiv, img);
+  container.append(timestampWrapperDiv, img);
   slide.append(container);
 
   splide.add(slide);

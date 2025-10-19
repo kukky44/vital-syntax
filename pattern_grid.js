@@ -8,8 +8,8 @@ let lRate = defalutRate;
 let prevRate = defalutRate;
 
 //for arduino sensors
-let leftReader;
-let rightReader;
+let leftArduino;
+let rightArduino;
 
 //gradual change for the temperature
 const tempStart = 25;
@@ -66,13 +66,13 @@ let leftAnimStartX;
 let rightAnimStartX;
 let animStartY;
 const ANIM_SPEED = 0.01;
-let finishedFrame = 0;
 let isFinishing = false;
 let isReturning = false;
 
 //sensor state
 let leftState;
 let rightState;
+let inputEnabled = true;
 
 //time manager
 let timeManager;
@@ -110,8 +110,8 @@ function setup() {
   RcurGridX = patternStartX;
   RcurGridY = patternStartY;
 
-  leftReader = new SerialManager('/dev/tty.usbmodemFX2348N1');
-  rightReader = new SerialManager('/dev/tty.usbmodem3');
+  leftArduino = new SerialManager('/dev/tty.usbmodemFX2348N1');
+  rightArduino = new SerialManager('/dev/tty.usbmodem3');
 
   timeManager = new TimeManager();
 
@@ -132,25 +132,24 @@ function draw() {
   background(3);
 
   if(timeManager.hasElapsed('returnGallery', 3000)) {
-    resetGrid();
-    hideFinishedAnimation();
-    hideCanvas();
-    timeManager.mark('finishedTransition');
+    returnToGallery();
   }
 
   if(leftState.isFinished && rightState.isFinished) {
-    finishedFrame = frameCount;
     isFinishing = true;
+    timeManager.mark('savingPattern');
+    hideAllMessages();
+    showMessage('center', 'Pattern saved. Returning to gallery.', 'delay');
     leftState.isFinished = false;
     rightState.isFinished = false;
   }
 
-  if(isFinishing && frameCount - finishedFrame > 300) {
+  if(isFinishing && timeManager.hasElapsed('savingPattern', 5200)) {
+    isFinishing = false;
+    timeManager.clear('savingPattern');
+    leftState.isFinished = false;
+    rightState.isFinished = false;
     savePattern();
-    resetGrid();
-    hideFinishedAnimation();
-    hideCanvas();
-    timeManager.mark('finishedTransition');
   }
 
   push();
@@ -166,41 +165,56 @@ function draw() {
   }
   pop();
 
-  // logg('lBPM: ' + leftReader.bpmValue + ', lTemp: ' + leftReader.tempValue);
-  // logg('rBPM: ' + rightReader.bpmValue + ', rTemp: ' + rightReader.tempValue);
-  // logg('leftBeat: ' + leftReader.isBeatChecked);
-  // logg('rightBeat: ' + rightReader.isBeatChecked);
+  // logg('lBPM: ' + leftArduino.bpmValue + ', lTemp: ' + leftArduino.tempValue);
+  // logg('rBPM: ' + rightArduino.bpmValue + ', rTemp: ' + rightArduino.tempValue);
+  // logg('leftBeat: ' + leftArduino.isBeatChecked);
+  // logg('rightBeat: ' + rightArduino.isBeatChecked);
   // logg('BPM: ' + bpmValue + ', Temp: ' + tempValue);
 
   //left color
-  leftCTemp = lerp(leftCTemp, leftReader.tempValue, 0.1);
+  leftCTemp = lerp(leftCTemp, leftArduino.tempValue, 0.1);
   leftCValue = Math.round(map(leftCTemp, tempStart, tempEnd, colorStart, colorEnd));
   if(leftCValue < 0) leftCValue = 360 + leftCValue;
 
   //right color
-  rightCTemp = lerp(rightCTemp, rightReader.tempValue, 0.1);
+  rightCTemp = lerp(rightCTemp, rightArduino.tempValue, 0.1);
   rightCValue = Math.round(map(rightCTemp, tempStart, tempEnd, colorStart, colorEnd));
   if(rightCValue < 0) rightCValue = 360 + rightCValue;
 
   //detect the hand and add pattern
-  processTouch('left', leftReader, leftState);
-  processTouch('right', rightReader, rightState);
+  processTouch('left', leftArduino, leftState);
+  processTouch('right', rightArduino, rightState);
 
-  //left indicator
-  drawIndicator(leftState, leftCValue, indiLOffsetX, rectY + 30, indicatorState.left, lRate);
-  //right indicator
-  drawIndicator(rightState, rightCValue, indiROffsetX, rectY + 30, indicatorState.right, rRate);
+  if(!isFinishing) {
+    //left indicator
+    if(!leftState.isFinished) drawIndicator(leftState, leftCValue, indiLOffsetX, rectY + 30, indicatorState.left, lRate);
+    //right indicator
+    if(!rightState.isFinished)drawIndicator(rightState, rightCValue, indiROffsetX, rectY + 30, indicatorState.right, rRate);
+
+    //draw progress bar
+    if(leftState.isActive && !leftState.isFinished) drawProgress('left');
+    if(rightState.isActive && !rightState.isFinished) drawProgress('right');
+  }
 
   drawCenterGrid(rectX, rectY);
 
-  //draw progress bar
-  if(leftState.isActive && !leftState.isFinished) drawProgress('left');
-  if(rightState.isActive && !rightState.isFinished) drawProgress('right');
 
   //handle edge cases
+  handleFinishedTransition();
   handleInactivity();
-  // handleAsymmetricFinish();
-  // handleFinishedTransition();
+  handleAsymmetricFinish();
+}
+
+function returnToGallery() {
+  goToLastSlide();
+  leftArduino.stopLoading();
+  rightArduino.stopLoading();
+  resetCanvas();
+  hideFinishedAnimation();
+  hideCanvas();
+  timeManager.mark('returnTransition');
+  inputEnabled = false;
+  hideAllMessages();
 }
 
 function handleInactivity() {
@@ -233,47 +247,65 @@ function handleInactivity() {
 }
 
 function handleAsymmetricFinish() {
-  if (leftState.isFinished && !rightState.isFinished) {
-    if (!timeManager.events['waitingRight']) {
-      timeManager.mark('waitingRight');
-      showMessage('center', 'One signal received — awaiting the other.');
+  if(isFinishing) return;
+
+  if(leftState.isFinished && !rightState.isFinished && !isFinishing) {
+    if (!timeManager.events['waiting-right']) {
+      timeManager.mark('waiting-right');
+      showMessage('left', 'Awaiting the other connection.', 'awaiting_extra', 'green');
     }
-    if (timeManager.hasElapsed('waitingRight', 10000)) {
-      showMessage('center', 'Connection incomplete — pattern saved.');
-      finalizeSoloPattern('left');
-      timeManager.clear('waitingRight');
+    if(timeManager.hasElapsed('waiting-right', 10000)) {
+      isFinishing = true;
+      timeManager.mark('savingPattern');
+      hideAllMessages();
+      showMessage('center', 'Connection incomplete — pattern saved.', 'long');
+      timeManager.clear('waiting-right');
     }
   }
 
-  if (rightState.isFinished && !leftState.isFinished) {
-    if (!timeManager.events['waitingLeft']) {
-      timeManager.mark('waitingLeft');
-      showMessage('center', 'One signal received — awaiting the other.');
+  if(rightState.isFinished && !leftState.isFinished && !isFinishing) {
+    if(!timeManager.events['waiting-left']) {
+      timeManager.mark('waiting-left');
+      showMessage('right', 'Awaiting the other connection.', 'awaiting_extra', 'green');
     }
-    if (timeManager.hasElapsed('waitingLeft', 10000)) {
-      showMessage('center', 'Connection incomplete — pattern saved.');
-      finalizeSoloPattern('right');
-      timeManager.clear('waitingLeft');
+    if(timeManager.hasElapsed('waiting-left', 10000)) {
+      isFinishing = true;
+      timeManager.mark('savingPattern');
+      hideAllMessages();
+      showMessage('center', 'Connection incomplete — pattern saved.', 'long');
+      timeManager.clear('waiting-left');
     }
   }
 }
 
 function handleFinishedTransition() {
-  if (timeManager.hasElapsed('finishedTransition', 2000)) {
+  if(!timeManager.events['returnTransition']) {
+    return;
+  }
+
+  if (timeManager.hasElapsed('returnTransition', 5000)) {
+    timeManager.clear('returnTransition');
     inputEnabled = true;
-  } else {
-    inputEnabled = false;
+    leftArduino.startLoading();
+    rightArduino.startLoading();
   }
 }
 
 //helper function for left/right sensor handling
-function processTouch(side, reader, state) {
-  const isLeft = side === 'left';
-  const readerBpm = reader.bpmValue;
+function processTouch(side, arduino, state) {
+  if(!inputEnabled) return;
 
-  if (reader.irValue > minIr && !state.isFinished) {
+  if(timeManager.hasElapsed(`${side}-inactive`, 12000)) {
+    arduino.isFake = true;
+  }
+
+  const isLeft = side === 'left';
+  const readerBpm = arduino.bpmValue;
+
+  if (arduino.irValue > minIr && !state.isFinished) {
     state.start();
     state.markTouched();
+    timeManager.clear(`waiting-${side}`);
 
     if (readerBpm > defalutRate) {
       if (isLeft) lRate = readerBpm; else rRate = readerBpm;
@@ -288,7 +320,7 @@ function processTouch(side, reader, state) {
         }
       }
     } else {
-      if (reader.isBeatChecked) {
+      if (state.isLoadStart || arduino.isBeatChecked) {
         showLoader(side);
         hidePrompt(side);
       } else {
@@ -311,6 +343,8 @@ let progressAmt = 0.1;
 let rad = 4;
 
 function drawProgress(side) {
+  if(!inputEnabled) return;
+
   let x = indiLOffsetX + progMargin;
   let patternArray = L_pattern;
 
@@ -409,7 +443,7 @@ function drawCenterGrid(x, y, g = window) {
 }
 
 function drawIndicator(sensor, cValue, offsetX, offsetY, state, rate) {
-  if(sensor.isFinished) return;
+  if(!inputEnabled) return;
   //temp circle
   noStroke();
   fill(cValue, sat, brt);
@@ -452,7 +486,7 @@ function drawIndicator(sensor, cValue, offsetX, offsetY, state, rate) {
   pop();
 }
 
-function resetGrid() {
+function resetCanvas() {
   L_pattern = [];
   R_pattern = [];
   LcurGridX = patternStartX;
@@ -463,8 +497,8 @@ function resetGrid() {
   isReturning = false;
   lProgHeight = 0;
   rPogHeight = 0;
-  leftReader.reset();
-  rightReader.reset();
+  leftArduino.reset();
+  rightArduino.reset();
   timeManager.reset();
   leftState.reset();
   rightState.reset();
@@ -515,7 +549,7 @@ function savePattern() {
   .then(result => {
     if (result.success) {
       addPatternSlide(result.path); // load from backend URL
-      goToLastSlide();
+      returnToGallery();
     } else {
       console.error("Save failed:", result);
     }
@@ -527,7 +561,7 @@ function getRightmostDigit(number) {
 }
 
 function logg(val) {
-  if(frameCount % 100 === 0) {
+  if(frameCount % 50 === 0) {
     console.log(val);
   }
 }
@@ -538,11 +572,15 @@ function keyPressed(){
     noLoop();
   }
 
+  if(key == "f") {
+    // rightArduino.isFake = !rightArduino.isFake;
+  }
+
   if(key == "n") {
     // resetGrid();
-    let temp = leftReader;
-    leftReader = rightReader;
-    rightReader = temp;
+    let temp = leftArduino;
+    leftArduino = rightArduino;
+    rightArduino = temp;
   }
 
   if(key == "d"){

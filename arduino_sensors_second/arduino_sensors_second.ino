@@ -42,12 +42,41 @@ const unsigned long PRINT_INTERVAL = 700; // ms
 
 unsigned long lastPresenceTime = 0;
 const uint32_t PRESENCE_VAL  = 60000;
-const unsigned long RESET_TIMEOUT = 5000;
+const unsigned long RESET_TIMEOUT = 10000;
 unsigned long nowMillis = 0;
 
 bool fingerPresent = false;
+bool isFake = false;
+bool isFinished = false;
 
 void loop() {
+  if (Serial.available() > 0) {
+    String msg = Serial.readStringUntil('\n');
+    if (msg == "FAKE_MODE") {
+      isFake = true;;
+    } else {
+      isFake = false;
+    }
+
+    if(msg == "FINISH") {
+      rateSpot = 0;
+      lastBeat = 0;
+      beatsPerMinute = 0;
+      beatAvg = 0;
+      memset(rates, 0, sizeof(rates));
+      fingerPresent = false;
+      isFinished = true;
+      isFake = false;
+      return;
+    }
+
+    if(msg == "START") {
+      isFinished = false;
+    }
+  }
+
+  if(isFinished) return;
+
   // read IR ONCE
   long irValue = particleSensor.getIR();
   nowMillis = millis();

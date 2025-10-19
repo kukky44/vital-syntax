@@ -5,6 +5,7 @@ class SensorState {
     this.isTouched = false;
     this.isActive = false;
     this.isLost = false;
+    this.isLoadStart = false;
     this.isFinished = false;
     this.timeManager = timeManager;
   }
@@ -14,25 +15,43 @@ class SensorState {
     if(!this.isStarted) {
       this.isStarted = true;
       showCanvas();
+      setTimeout(() => {
+        this.isLoadStart = true;
+      }, 5000);
     }
   }
 
   markTouched(value = true) {
     this.isTouched = !!value;
-    if(this.isTouched && this.isLost) {
-      this.isLost = false;
-      hideMessage(this.side);
+    if(this.isTouched) {
+      if(this.isLost) {
+        this.isLost = false;
+        this.timeManager.mark(`${this.side}-inactive`);
+        hideMessage(this.side);
+      }
+
+      if(this.side == 'left') {
+        toggleToastLoading('right');
+      } else {
+        toggleToastLoading('left');
+      }
     }
   }
 
   markActive(value = true) {
     this.isActive = !!value;
+    this.timeManager.mark(`${this.side}-inactive`);
   }
 
   markLost(value = true) {
     this.isLost = !!value;
     if (this.isLost) {
-      showMessage(this.side, 'Connection lost. Please place your hand again.');
+      this.timeManager.clear(`${this.side}-inactive`);
+      if(this.side === 'left' && rightState.isFinished || this.side === 'right' && leftState.isFinished) {
+        showMessage(this.side, 'Connection lost. Please place your hand again.', 'awaiting_extra', 'red');
+      } else {
+        showMessage(this.side, 'Connection lost. Please place your hand again.', 'awaiting', 'red');
+      }
     }
   }
 
@@ -43,6 +62,7 @@ class SensorState {
 
   reset() {
     this.isStarted = false;
+    this.isLoadStart = false;
     this.isTouched = false;
     this.isActive = false;
     this.isLost = false;

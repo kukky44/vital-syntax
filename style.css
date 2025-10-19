@@ -36,10 +36,10 @@ html, body {
 .toast {
   visibility: hidden;
   background-color: #fefefe;
-  color: #080808;
+  color: #fefefe;
   border-radius: 2px;
   padding: 16px;
-  position: fixed;
+  position: absolute;
   z-index: 1;
   top: 12%;
   opacity: 0;
@@ -47,20 +47,31 @@ html, body {
   transition: opacity 0.3s ease-out, margin-top 0.3s ease-out, visibility 0s;
 }
 
+.toast.delay {
+  transition: opacity 0.3s ease-out 2s, margin-top 0.3s 2s ease-out, visibility 0s 2s;
+}
+
 .toast.left { left: 9vh; }
 .toast.right { right: 9vh; }
 .toast.center {
   background-color: #9201cb;
-  color: #fefefe;
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
 }
 
-.toast.center::after {
+.toast.green {
+  background-color: #22ae73;
+}
+
+.toast.red {
+  background-color: #df0707;
+}
+
+.toast::after {
   visibility: hidden;
   content: "";
-  position: fixed;
+  position: absolute;
   height: 100%;
   top: 0;
   bottom: 0;
@@ -73,7 +84,29 @@ html, body {
   transition: width 2.8s linear, visibility 0s;
 }
 
-.toast.center.show::after {
+.toast.awaiting::after {
+  transition: width 4.8s linear, visibility 0s;
+}
+
+.toast.awaiting.extra::after {
+  transition: width 7.3s linear 2.5s, visibility 0s;
+}
+
+.toast.delay::after {
+  transition: width 3s linear 2s, visibility 0s 2s;
+}
+
+.toast.long::after {
+  transition: width 5s linear, visibility 0s;
+}
+
+.toast.show.awaiting.hideLoad::after {
+  visibility: hidden;
+  width: 0;
+}
+
+.toast.center.show::after,
+.toast.show.awaiting::after {
   visibility: visible;
   width: 100%;
 }
@@ -201,7 +234,7 @@ html, body {
 .gallery {
   display: block;
   transition-behavior: allow-discrete;
-  transition: all 0.3s;
+  transition: all 1.8s;
   opacity: 1;
 }
 
@@ -256,12 +289,19 @@ html, body {
   height: 100%;
 }
 
+.pattern_timestamp-wrapper {
+  position: absolute;
+  left: -24%;
+  top: -4px;
+  bottom: 0;
+}
+
+.pattern_timestamp-text {
+  margin-bottom: 8px;
+}
+
 .pattern_timestamp {
   text-align: right;
-  position: absolute;
-  left: -22%;
-  top: 0;
-  bottom: 0;
   writing-mode: sideways-lr;
   font-family: Futura;
 }
@@ -269,11 +309,13 @@ html, body {
 .pattern_date {
   font-size: 24px;
   margin-top: 4px;
+  margin-left: -4px;
 }
 
 .pattern_time {
   font-size: 64px;
   line-height: 1;
+  margin-left: 12px;
 }
 
 /* Splide settings */

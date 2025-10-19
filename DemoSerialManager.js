@@ -33,6 +33,16 @@ class SerialManager {
     }
   }
 
+
+  startLoading = () => {
+    this.serial.write("START\n");
+  }
+
+  stopLoading = () => {
+    this.serial.write("FINISH\n");
+  }
+
+
   serverConnected = () => {
     print("Connected to Server");
   }

@@ -16,13 +16,14 @@ class SerialManager {
     this.tempValue = 20;
     this.isBeatChecked = false;
     this.isFake = false;
-    this.dataCount = 0;
   }
 
   reset = () => {
+    this.irValue = 40000;
+    this.bpmValue = 0;
+    this.tempValue = 20;
     this.isBeatChecked = false;
     this.isFake = false;
-    this.dataCount = 0;
   }
 
   printList = (portList) => {
@@ -39,7 +40,16 @@ class SerialManager {
     print("Port is open");
   }
 
+  startLoading = () => {
+    this.serial.write("START\n");
+  }
+
+  stopLoading = () => {
+    this.serial.write("FINISH\n");
+  }
+
   gotData = () => {
+    if(this.isFake) this.serial.write("FAKE_MODE\n");
     // console.log("data: ");
     let currentString = this.serial.readLine().trim();
     if (currentString.length > 0) {
@@ -48,19 +58,21 @@ class SerialManager {
         this.irValue = parseInt(parts[0].trim().replace(/[^0-9.]/g, ""));
         this.bpmValue = parseInt(parts[1].trim().replace(/[^0-9.]/g, ""));
         this.tempValue = parseFloat(parts[2].trim().replace(/[^0-9.]/g, ""));
-        const isChecked = boolean(parseInt(parts[3].trim().replace(/[^0-9.]/g, "")));
-        if(isChecked) this.isBeatChecked = true;
+        this.isBeatChecked = boolean(parseInt(parts[3].trim().replace(/[^0-9.]/g, "")));
+        // if(isChecked) this.isBeatChecked = true;
+      }
+
+      if(parts.length === 1) {
+        console.log(parts[0]);
       }
     }
 
-    //in case the reading is not going well
-    //use fake value to avoid awkward moment at the exhibition
-    if(this.dataCount > 200 && this.isFake) {
-      const fakeBpm = map(this.irValue, 110000, 150000, 59, 91);
-      // this.bpmValue = fakeBpm;
+    // in case the reading is not going well
+    // use fake value to avoid awkward moment at the exhibition
+    if(this.isFake) {
+      const fakeBpm = parseInt(map(this.irValue, 110000, 150000, 59, 91));
+      this.bpmValue = fakeBpm;
     }
-
-    if(this.isFake) this.dataCount++;
   }
 
   gotError = (theerror) => {

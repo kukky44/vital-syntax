@@ -4,6 +4,7 @@ class TimeManager {
   }
 
   mark(name) {
+    if(name == 'savingPattern' || name == 'returnGallery') inputEnabled = false;
     this.events[name] = millis();
   }
 
@@ -17,6 +18,7 @@ class TimeManager {
   }
 
   clear(name) {
+    if (!this.events[name]) return;
     delete this.events[name];
   }
 
