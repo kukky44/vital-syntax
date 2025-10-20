@@ -111,7 +111,7 @@ function setup() {
   RcurGridY = patternStartY;
 
   leftArduino = new SerialManager('/dev/tty.usbmodemFX2348N1');
-  rightArduino = new SerialManager('/dev/tty.usbmodem3');
+  rightArduino = new SerialManager('/dev/tty.usbmodem4');
 
   timeManager = new TimeManager();
 

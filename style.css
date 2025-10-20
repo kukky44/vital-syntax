@@ -8,7 +8,11 @@ html, body {
   padding: 0;
   font-family: Futura, Arial, Helvetica, sans-serif;
   /* max-height: 100vh; */
-  /* cursor: none; */
+  cursor: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
 }
 
 #myCanvas {
@@ -129,7 +133,7 @@ html, body {
   border-radius: 8px;
   top: 20%;
   /* bottom: 10%; */
-  left: 5%;
+  left: 4%;
   width: 20%;
   padding: 32px;
 }
@@ -147,7 +151,7 @@ html, body {
 
 .prompt.right {
   left: auto;
-  right: 5%;
+  right: 4%;
 }
 
 .promptMsg {
@@ -168,7 +172,7 @@ html, body {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 30%;
+  width: 19%;
   background: #080808;
   left: 0;
   color: #f9f9f9;
@@ -187,7 +191,7 @@ html, body {
 /* Loader */
 /* HTML: <div class="loader"></div> */
 .loader {
-  top: 19%;
+  top: 20%;
   display: none;
   position: absolute;
   left: 5vh;
@@ -195,7 +199,7 @@ html, body {
 
 .loadingMsg {
   color: #f9f9f9;
-  margin-bottom: 40px;
+  margin-bottom: 54px;
   font-size: 20px;
 }
 
