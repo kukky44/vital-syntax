@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vital Syntax - Pattern gallery</title>
+
+    <link rel="stylesheet" type="text/css" href="gallery-style.css">
+    <link rel="stylesheet" href="./libraries/splide.min.css">
+  </head>
+
+  <body>
+    <div id="gallery" class="gallery">
+      <div id="infoWrapper" class="info-textWrapper">
+        <div id="info-text" class="info info-text">
+          <button id="info-close" class="info-btn-close btn">Close</button>
+          <p>
+            The patterns displayed on this page were generated during the 2025 Design Degree Show held at The Pā, University of Waikato, on October 20–21, 2025. Over the two-day exhibition, 102 patterns were created — each representing a visual record of participants’ inner states, formed from their heart rate and body temperature signals.
+          </p>
+          <p>
+            Vital Syntax is an experimental installation that transforms these physiological signals into abstract patterns of colour and shape. When one or two visitors place their hands on sensors, their biometric data is translated into evolving visuals, forming a shared expression of emotion and connection.
+          </p>
+          <p>
+            The work imagines a future where communication moves beyond words, exploring new ways to express what we feel through our living signals.
+          </p>
+          <p>
+            For more information about this project, visit the <a href="https://degreeshow.waikato.ac.nz/Student_Webpage.html?student=Yusuke_Kukimoto">Degree Show website</a>.
+          </p>
+        </div>
+      </div>
+      <button id="info-open" class="info info-btn-open btn">About this project</button>
+      <section class="splide">
+        <div class="splide__track">
+          <ul class="splide__list">
+          </ul>
+        </div>
+
+        <div class="splide__progress">
+          <div class="splide__progress__bar">
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="./libraries/splide.min.js"></script>
+    <script src="patterns.js"></script>
+    <script src="gallery-main.js"></script>
+  </body>
+</html>
