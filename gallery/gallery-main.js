@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
     pauseOnHover: false,
     pauseOnFocus: false,
     width : '100vw',
-		height: '100vh',
+		height: '100dvh',
   }).mount();
 
   // for layout change

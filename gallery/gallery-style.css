@@ -30,7 +30,6 @@ html, body, * {
 .splide {
   position: relative;
   overflow: hidden; /* optional */
-  max-height: 100dvh;
 }
 
 .splide__progress {
