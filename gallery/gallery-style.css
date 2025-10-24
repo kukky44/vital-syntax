@@ -30,6 +30,7 @@ html, body, * {
 .splide {
   position: relative;
   overflow: hidden; /* optional */
+  max-height: 100dvh;
 }
 
 .splide__progress {
@@ -144,6 +145,7 @@ html, body, * {
   cursor: pointer;
   font-size: 16px;
   color: #000;
+  background: none;
 }
 
 .info-btn-close {
