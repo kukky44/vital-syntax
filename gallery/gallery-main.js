@@ -92,6 +92,10 @@ document.addEventListener('DOMContentLoaded', function () {
 		height: '100vh',
   }).mount();
 
+  // for layout change
+  // addPatternSlide('/pattern_images/1760907465681.png');
+  // return;
+
   // fetch all images and display them
   for (let file of patterns) {
     const path = `/pattern_images/${file}`;
